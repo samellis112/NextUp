@@ -27,6 +27,9 @@
 html, body, button, input, select, textarea, .container * {
   font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+/* Never let content shove the page sideways (the "it goes around when I zoom"
+   problem) — only vertical scroll is allowed. */
+html, body { overflow-x: hidden; }
 body {
   margin: 0;
   font-weight: 400;
@@ -34,11 +37,14 @@ body {
   color: var(--text);
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* safe centering: centers when the game fits, but falls back to the top/left
+     instead of clipping or drifting off-screen when it's taller/wider than the
+     viewport (e.g. when zoomed in). */
+  align-items: safe center;
+  justify-content: safe center;
   padding: 24px;
 }
-.container { width: 100%; max-width: 980px; }
+.container { width: 100%; max-width: 980px; margin: 0 auto; }
 .screen { display: none; }
 .screen.active { display: block; }
 
@@ -165,23 +171,27 @@ h1.round-title { font-size: 22px; margin: 0; font-weight: 500; }
 }
 .sequence { margin-bottom: 20px; }
 
-/* Frames stack TOP-TO-BOTTOM (numbered 1→4) so the order is unambiguous, then
-   the answer (frame 5) continues below. Reference frames are sized in viewport
-   units so the whole column tries to fit one screen; if it can't, the page
-   just scrolls vertically. Applies to every 4-frame sequence family. */
+/* Frames read LEFT-TO-RIGHT (numbered 1→4) in a single row that never wraps,
+   then the answer (frame 5) sits below as a larger stage. Reference frames are
+   sized in viewport units so all four always fit the width on one line, at any
+   zoom, and the row stays centered. Applies to every 4-frame sequence family. */
 .frame-stack {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: clamp(8px, 1.6vh, 14px);
+  justify-content: center;
+  gap: clamp(6px, 2vw, 16px);
 }
 /* Reference frames: read-only, so kept compact and viewport-scaled. Beats the
-   generic #screen-round .sequence .tile width rule. */
+   generic #screen-round .sequence .tile width rule. 20vw × 4 + gaps always
+   clears the viewport width. */
 #screen-round .sequence .tile.frame-tile,
 .tile.frame-tile {
   position: relative;
-  width: min(30vw, 15vh, 132px);
-  height: min(30vw, 15vh, 132px);
+  flex: 0 0 auto;
+  width: min(18vw, 22vh, 118px);
+  height: min(18vw, 22vh, 118px);
 }
 .frame-tile svg { width: 100%; height: 100%; }
 .frame-chip {
@@ -490,21 +500,26 @@ h1.round-title { font-size: 22px; margin: 0; font-weight: 500; }
 .panel[data-family="number"] .tile { border-width: 1px; border-radius: 12px; }
 
 /* Weeks & schedule: stacked wide rows, paper-calendar feel. */
-.weeks, .schedule { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-bottom: 20px; }
+.weeks, .schedule { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-bottom: 20px; max-width: 100%; }
 .week-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  max-width: 100%;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 6px 10px;
 }
-.week-row svg { display: block; }
+/* The week/schedule grids render at a fixed 330px SVG; let them scale down so
+   they never overflow a phone (which, with overflow-x hidden, would clip). */
+.week-row svg { display: block; min-width: 0; max-width: 100%; height: auto; }
 .week-num { font-size: 11px; color: #888; min-width: 34px; font-variant-numeric: tabular-nums; }
+.week-slot { min-width: 0; }
 .question-week { border-style: dashed; color: var(--muted); background: var(--panel-light); }
 .week-q { font-size: 22px; font-weight: 300; padding: 4px 140px 4px 4px; }
-.tile.week-tile { width: auto; height: auto; padding: 8px; }
+.tile.week-tile { width: auto; height: auto; max-width: 100%; padding: 8px; }
+.tile.week-tile svg { max-width: 100%; height: auto; }
 
 /* Instruction line for puzzle families that need a hint up top. */
 .instruction {
@@ -1174,7 +1189,5 @@ svg { display: block; }
   .feedback { margin-top: 14px; }
   .results .big { font-size: 48px; }
 }
-@media (min-width: 721px) and (max-width: 1520px) {
-  body { padding-right: 274px; }
-}
-body.login-active { padding-right: 24px; }
+/* (Removed the asymmetric right padding that pushed the game off-center on
+   medium / zoomed widths — the game now centers globally at every size.) */

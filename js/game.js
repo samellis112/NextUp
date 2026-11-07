@@ -32,7 +32,6 @@ let countdownTimer = null;
 const ui = {
   sequence: document.getElementById('sequence'),
   builder: document.getElementById('answer-builder'),
-  answerLabel: document.getElementById('answer-label'),
   panel: document.querySelector('#screen-round .panel'),
   msg: document.getElementById('msg'),
   rule: document.getElementById('rule-note'),
@@ -135,82 +134,67 @@ function loadQuestion() {
   ui.rule.hidden = true;
   ui.next.hidden = true;
 
-  const label = document.getElementById('sequence-label');
   const fam = q.family || (q.type === 'matrix' ? 'matrix' : 'shapes');
   ui.panel.dataset.family = fam; // drives per-family styling
-  let answerLabel = 'Build the figure that comes next';
+  const isMC = !!q.choice;        // shape/colour/pattern puzzles → pick from 5
 
-  // Sequence frames stack top-to-bottom (numbered 1→4) so the order is never
-  // ambiguous, and the answer (frame 5) continues the column as a larger stage.
-  // Everything is sized in viewport units to fit on one screen where it can,
-  // and scrolls vertically when it can't.
+  // Numbered frames read left-to-right; the answer continues as frame 5.
   const frameStack = (frames, size) => `
     <div class="frame-stack">
       ${frames.map((p, i) => `<div class="tile frame-tile">${renderPanel(p, size)}<span class="frame-chip">${i + 1}</span></div>`).join('')}
     </div>`;
+  // The answer cell: a plain "?" stage for pick-one puzzles (filled on choice)
+  // or the interactive slot for direct-input puzzles.
   const ANSWER_STAGE = `
     <div class="answer-stage">
       <div class="answer-wrap">
-        <div class="tile question answer-big" id="answer-slot"></div>
+        <div class="tile question answer-big" id="answer-slot"><span class="slot-ph">?</span></div>
         <span class="frame-chip chip-answer">5</span>
       </div>
     </div>`;
   const SLOT_WEEK = `<div class="week-row question-week"><span class="week-num">Wk 5</span><div id="answer-slot" class="week-slot"></div></div>`;
 
   if (fam === 'matrix') {
-    label.textContent = 'Complete the grid. Build the figure for the empty cell.';
     ui.sequence.className = 'matrix';
     ui.sequence.innerHTML = q.frames
       .map(p => `<div class="tile">${renderPanel(p, 120)}</div>`)
-      .join('') + `<div class="tile question" id="answer-slot"></div>`;
-    answerLabel = 'Build the figure for the empty cell';
+      .join('') + `<div class="tile question" id="answer-slot"><span class="slot-ph">?</span></div>`;
   } else if (fam === 'weeks') {
-    label.textContent = 'Watch the weeks unfold.';
     ui.sequence.className = 'weeks';
     ui.sequence.innerHTML = q.frames
       .map((p, i) => `<div class="week-row"><span class="week-num">Wk ${i + 1}</span>${renderPanel(p, 330)}</div>`)
       .join('') + SLOT_WEEK;
-    answerLabel = 'Mark the good days in week five';
   } else if (fam === 'schedule') {
-    label.textContent = 'One week. Three rules. One right day.';
     ui.sequence.className = 'schedule';
     ui.sequence.innerHTML = `<div class="week-row">${renderPanel(q.frames[0], 330)}</div>`
       + `<div class="week-row question-week"><span class="week-num">You</span><div id="answer-slot" class="week-slot"></div></div>`;
-    answerLabel = 'Pick the day';
   } else if (fam === 'month') {
-    label.textContent = 'Read the requirements. Mark every day that fits.';
     ui.sequence.className = 'month-layout';
     ui.sequence.innerHTML = `<div id="answer-slot" class="month-slot"></div>`;
-    answerLabel = 'Tap the qualifying days';
   } else if (fam === 'bars') {
-    label.textContent = 'Read the prompt. Set the bars so the numbers work.';
     ui.sequence.className = 'bars-layout';
     ui.sequence.innerHTML = `<div id="answer-slot" class="bars-slot"></div>`;
-    answerLabel = 'Drag the bars';
   } else if (fam === 'word') {
-    label.textContent = 'Work the numbers.';
     ui.sequence.className = 'word-layout';
     ui.sequence.innerHTML = `<div class="word-prompt">${esc(q.prompt || '')}</div>` + ANSWER_STAGE;
-    answerLabel = 'Type your answer';
-  } else if (fam === 'number') {
-    label.textContent = 'Evaluate the sequence. What number comes next?';
-    ui.sequence.className = 'sequence';
-    ui.sequence.innerHTML = frameStack(q.frames, 132) + ANSWER_STAGE;
-    answerLabel = 'Type the next number';
   } else {
-    label.textContent = 'Evaluate the sequence. Which figure comes NEXT?';
     ui.sequence.className = 'sequence';
     ui.sequence.innerHTML = frameStack(q.frames, 132) + ANSWER_STAGE;
-    if (fam === 'nested') answerLabel = 'Fill in figure 5 — drag a fill into each section';
   }
 
+  // One-line how-to only where a puzzle needs its rules shown; the visual
+  // puzzles carry none (the frames + "?" + → say it all).
   const instr = document.getElementById('instruction');
   instr.hidden = !q.instruction;
   instr.textContent = q.instruction || '';
 
-  ui.answerLabel.textContent = answerLabel;
-  renderBuilder(document.getElementById('answer-slot'), ui.builder, q.answerSpec,
-    built => handleSubmit(built));
+  if (isMC) {
+    renderChoices(q);
+  } else {
+    ui.builder.innerHTML = '';
+    renderBuilder(document.getElementById('answer-slot'), ui.builder, q.answerSpec,
+      built => handleSubmit(built));
+  }
 
   startTimer();
 }
@@ -254,26 +238,21 @@ export const MAX_TRIES = 3;
 const totalAttempts = results => results.reduce((s, r) => s + r.tries, 0);
 const totalSolved = results => results.filter(r => r.solved).length;
 
-function handleSubmit(built) {
-  if (!game || game.answered) return;
-  const q = currentQuestion();
-  const correct = panelEq(built, q.next);
+/* A wrong try with tries left: nudge and let them keep going. Returns true if
+   the question is now resolved (solved or out of tries). */
+function registerTry(correct) {
   game.tries++;
-
   if (!correct && game.tries < MAX_TRIES) {
     const left = MAX_TRIES - game.tries;
     ui.msg.textContent = `Not quite — ${left} ${left === 1 ? 'try' : 'tries'} left.`;
     ui.msg.className = 'msg wrong';
     shake(ui.panel);
     playSound('wrong');
-    return; // builder stays as-is; timer keeps running
+    return false;
   }
-
-  // Resolved: solved, or out of tries.
   game.answered = true;
   if (correct) {
-    // First-try solves heat the streak glow twice as fast.
-    game.heat = (game.heat || 0) + (game.tries === 1 ? 2 : 1);
+    game.heat = (game.heat || 0) + (game.tries === 1 ? 2 : 1); // first-try solves heat faster
     playSound('correct');
   } else {
     game.heat = 0;
@@ -281,40 +260,82 @@ function handleSubmit(built) {
     playSound('wrong');
   }
   setStreakHeat(game.heat);
-  const elapsed = stopTimer();
-  const r = { solved: correct, tries: game.tries, timeMs: Math.round(elapsed) };
-  game.results.push(r);
+  return true;
+}
 
-  // Reveal in place: the slot (already showing what they built) goes green or
-  // red and freezes; when unsolved, the correct answer renders in the tray.
+/* Shared tail once a question resolves: score it, reveal the rule, advance. */
+function afterResolve(correct) {
+  const elapsed = stopTimer();
+  game.results.push({ solved: correct, tries: game.tries, timeMs: Math.round(elapsed) });
+  const q = currentQuestion();
+
+  ui.msg.textContent = correct
+    ? `Correct${game.tries > 1 ? ` on try ${game.tries}` : ''} · ${(elapsed / 1000).toFixed(1)}s`
+    : 'Out of tries';
+  ui.msg.className = 'msg ' + (correct ? 'correct' : 'wrong');
+  if (q.rule) { ui.rule.innerHTML = `<b>Rule:</b> ${esc(q.rule)}`; ui.rule.hidden = false; }
+  ui.progress.style.width = ((game.idx + 1) / totalLength() * 100) + '%';
+  if (game.mode === 'daily') saveDailyProgress(game.results);
+
+  const last = game.idx + 1 >= totalLength();
+  ui.next.textContent = last ? '✓' : '→';
+  ui.next.setAttribute('aria-label', last ? 'See results' : 'Next puzzle');
+  ui.next.hidden = false;
+  ui.next.focus();
+}
+
+/* Direct-input puzzles (dots, number, calendar, schedule, bars). */
+function handleSubmit(built) {
+  if (!game || game.answered) return;
+  const q = currentQuestion();
+  const correct = panelEq(built, q.next);
+  if (!registerTry(correct)) return;
+
+  // Freeze the slot green/red; show the correct answer when they missed it.
   const slot = document.getElementById('answer-slot');
-  if (slot) {
-    slot.classList.add('resolved', correct ? 'correct' : 'wrong');
-  }
+  if (slot) slot.classList.add('resolved', correct ? 'correct' : 'wrong');
   const correctTile = (p) => (p.week || p.month || p.bars
     ? `<div class="tile week-tile correct">${renderPanel(p, 300)}</div>`
     : `<div class="tile correct">${renderPanel(p, 120)}</div>`);
   ui.builder.innerHTML = correct ? '' : `
     <div class="reveal">
       <div class="reveal-item">
-        <div class="reveal-label">Correct answer</div>
+        <div class="reveal-label">Answer</div>
         ${correctTile(q.next)}
       </div>
     </div>`;
+  afterResolve(correct);
+}
 
-  ui.msg.textContent = correct
-    ? `Correct${r.tries > 1 ? ` on try ${r.tries}` : ' first try'}! ${(elapsed / 1000).toFixed(1)}s`
-    : `Out of tries — the correct answer is shown.`;
-  ui.msg.className = 'msg ' + (correct ? 'correct' : 'wrong');
-  ui.rule.innerHTML = `<b>The rule:</b> ${esc(q.rule)}`;
-  ui.rule.hidden = false;
-  ui.progress.style.width = ((game.idx + 1) / totalLength() * 100) + '%';
+/* Pick-from-5 puzzles (shapes, nesting, pattern, matrix distribution). */
+function renderChoices(q) {
+  const opts = q.choice.options;
+  ui.builder.innerHTML = `<div class="choices">${opts.map((p, i) =>
+    `<button type="button" class="choice-opt" data-i="${i}" aria-label="Option ${i + 1}">${renderPanel(p, 108)}</button>`).join('')}</div>`;
+  const els = [...ui.builder.querySelectorAll('.choice-opt')];
+  els.forEach(btn => btn.addEventListener('click', () => {
+    if (game.answered || btn.disabled) return;
+    const i = parseInt(btn.dataset.i, 10);
+    const slot = document.getElementById('answer-slot'); // echo the pick into the "?" cell
+    if (slot) slot.innerHTML = renderPanel(opts[i], 160);
+    handleChoice(i, q, els);
+  }));
+}
 
-  if (game.mode === 'daily') saveDailyProgress(game.results);
-
-  ui.next.textContent = game.idx + 1 >= totalLength() ? 'See Results →' : 'Next →';
-  ui.next.hidden = false;
-  ui.next.focus();
+function handleChoice(idx, q, els) {
+  if (!game || game.answered) return;
+  const correct = idx === q.choice.answerIndex;
+  if (!registerTry(correct)) {
+    els[idx].classList.add('opt-wrong');
+    els[idx].disabled = true; // a wrong pick is spent; choose again
+    return;
+  }
+  els.forEach(e => { e.disabled = true; });
+  els[q.choice.answerIndex].classList.add('opt-correct');
+  if (!correct) els[idx].classList.add('opt-wrong');
+  const slot = document.getElementById('answer-slot');
+  if (slot) slot.classList.add('resolved', correct ? 'correct' : 'wrong');
+  afterResolve(correct);
 }
 
 function nextOrFinish() {

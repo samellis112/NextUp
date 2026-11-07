@@ -18,7 +18,7 @@
    Every generator takes (R, level) where R = rngHelpers(random) so the daily
    challenge can run on a shared seed. */
 
-import { SHAPES, COLOR_NAMES, TEXTURES } from './panels.js';
+import { SHAPES, COLOR_NAMES, TEXTURES, panelEq, deepClone } from './panels.js';
 
 const SEQ_LEN = 4; // frames shown before the "?"
 
@@ -321,9 +321,7 @@ function genNestedShape(R, level, shape) {
       + 'starting at a different point in it'
       + (uneven ? ' and some advancing two steps at a time' : '')
       + '. Each section’s answer is the one fill it hasn’t shown yet.',
-    instruction: single
-      ? 'Each section cycles through one shared 5-step pattern (starting in different places). Work out the pattern, then fill the next frame.'
-      : 'Every outer and inner section cycles through one shared 5-step pattern, each at its own start point. Fill in the next frame.',
+    instruction: null, // visual pick-one puzzle — no wording needed
     answerSpec: { kind: 'nested', shape, n, single, states },
   };
 }
@@ -487,7 +485,7 @@ function genNumberSeq(R, level) {
   return {
     type: 'sequence', family: 'number', frames, next: { text: String(seq[SEQ_LEN]) },
     rule,
-    instruction: 'The numbers follow a hidden rule. Work it out, then type the next number.',
+    instruction: null, // self-evident: numbers + "?" + keypad
     answerSpec: { kind: 'number', maxLen: String(seq[SEQ_LEN]).length + 2 },
   };
 }
@@ -631,7 +629,7 @@ function genRatioWord(R, level) {
     next: { text: String(answer) },
     prompt,
     rule: `The answer is ${answer}.`,
-    instruction: 'Whole-number answer — type it on the pad.',
+    instruction: null, // the prompt above carries it; keypad is self-evident
     answerSpec: { kind: 'number', maxLen: String(answer).length + 2 },
   };
 }
@@ -739,12 +737,88 @@ const POOLS = {
 
 export const DIFFICULTIES = ['easy', 'medium', 'hard'];
 
-function packQuestion(q, difficulty) {
-  return {
+/* Puzzles where the answer is a shape/colour/pattern you'd otherwise have to
+   construct are presented as 5 pre-filled choices instead (owner: picking is
+   friendlier than choosing inner/outer/colour/shape). */
+const MC_KINDS = new Set(['center', 'centerNested', 'nested']);
+
+/* Find a section fill's index in the puzzle's 5-state list (null = blank). */
+function stateIndex(states, sec) {
+  if (!sec) return -1;
+  return states.findIndex(s => (s.color || null) === (sec.color || null)
+    && (s.texture || null) === (sec.texture || null));
+}
+
+/* Plausible wrong answers (near-misses a careless solver would pick). */
+function choiceCandidates(next, frames, spec, R) {
+  const out = [];
+  const lastFrame = frames[frames.length - 1];
+
+  if (spec.kind === 'center' || spec.kind === 'centerNested') {
+    const c = next.center;
+    const shapes = (spec.shapes || SHAPES).filter(s => s !== c.kind);
+    const fills = (spec.fills || ['solid', 'outline']).filter(f => f !== c.fill);
+    R.shuffle(shapes.slice()).forEach(s => out.push({ center: { ...c, kind: s } }));
+    R.shuffle(fills.slice()).forEach(f => out.push({ center: { ...c, fill: f } }));
+    if (spec.kind === 'centerNested' && c.inner) {
+      // swap inner/outer shapes — a classic lure
+      out.push({ center: { ...c, kind: c.inner.kind, inner: { ...c.inner, kind: c.kind } } });
+      R.shuffle(shapes.slice()).forEach(s => out.push({ center: { ...c, inner: { ...c.inner, kind: s } } }));
+    }
+    out.push(deepClone(lastFrame));
+    out.push(deepClone(frames[0]));
+  } else if (spec.kind === 'nested') {
+    const states = spec.states || [];
+    const sh = next.nested.shape;
+    const single = (next.nested.inner || []).length === 0;
+    const cloneArr = a => a.map(s => (s ? { ...s } : null));
+    const shift = (arr, d) => arr.map(sec => {
+      const i = stateIndex(states, sec);
+      if (i < 0) return states.length ? { ...states[((d % states.length) + states.length) % states.length] } : null;
+      return { ...states[((i + d) % states.length + states.length) % states.length] };
+    });
+    // off-by-one in the pattern (didn't advance / over-advanced)
+    out.push({ nested: { shape: sh, outer: shift(next.nested.outer, 1), inner: single ? [] : shift(next.nested.inner, 1) } });
+    out.push({ nested: { shape: sh, outer: shift(next.nested.outer, -1), inner: single ? [] : shift(next.nested.inner, -1) } });
+    if (!single && next.nested.outer.length === next.nested.inner.length) {
+      out.push({ nested: { shape: sh, outer: cloneArr(next.nested.inner), inner: cloneArr(next.nested.outer) } }); // layers swapped
+    }
+    out.push(deepClone(lastFrame)); // copy of the last shown frame
+    out.push({ nested: { shape: sh, outer: cloneArr(next.nested.outer).reverse(), inner: single ? [] : cloneArr(next.nested.inner) } });
+    out.push(deepClone(frames[0]));
+  }
+  return out;
+}
+
+/* Build the correct answer + 4 distinct distractors, shuffled. */
+function buildChoices(next, frames, spec, R) {
+  const options = [deepClone(next)];
+  for (const c of choiceCandidates(next, frames, spec, R)) {
+    if (options.length >= 5) break;
+    if (c && !options.some(o => panelEq(o, c))) options.push(c);
+  }
+  // Fallback: if near-misses collided, pad from other shown frames / tweaks.
+  let guard = 0;
+  while (options.length < 5 && guard++ < 40) {
+    const src = R.pick(frames);
+    const c = deepClone(src);
+    if (!options.some(o => panelEq(o, c))) options.push(c);
+    else if (spec.kind !== 'nested') { // last resort: random center
+      const alt = { center: { kind: R.pick(spec.shapes || SHAPES), fill: R.pick(spec.fills || ['solid', 'outline']) } };
+      if (!options.some(o => panelEq(o, alt))) options.push(alt);
+    }
+  }
+  const shuffled = R.shuffle(options.map((p, i) => ({ p, correct: i === 0 })));
+  return { options: shuffled.map(o => o.p), answerIndex: shuffled.findIndex(o => o.correct) };
+}
+
+function packQuestion(q, difficulty, R) {
+  const kind = q.answerSpec.kind;
+  const base = {
     type: q.type,
     family: q.family || (q.type === 'matrix' ? 'matrix'
-      : q.answerSpec.kind === 'nested' ? 'nested'
-      : q.answerSpec.kind === 'dots' ? 'dots' : 'shapes'),
+      : kind === 'nested' ? 'nested'
+      : kind === 'dots' ? 'dots' : 'shapes'),
     frames: q.frames,
     next: q.next,
     rule: q.rule,
@@ -753,6 +827,8 @@ function packQuestion(q, difficulty) {
     answerSpec: q.answerSpec,
     difficulty,
   };
+  if (R && MC_KINDS.has(kind)) base.choice = buildChoices(q.next, q.frames, q.answerSpec, R);
+  return base;
 }
 
 /* The daily's fifth puzzle is always a hard nested shape — the flagship finale. */
@@ -762,11 +838,11 @@ export function generateNestedFinale(R) {
     ['triangle', 3], ['square', 3], ['circle', 3],
     ['square', 4], ['circle', 4],
   ]);
-  return packQuestion(genNestedShape(R, pick[1], pick[0]), 'hard');
+  return packQuestion(genNestedShape(R, pick[1], pick[0]), 'hard', R);
 }
 
 export function generateProblem(R, difficulty) {
   const pool = POOLS[difficulty] || POOLS.medium;
   const [gen, level] = R.pick(pool);
-  return packQuestion(gen(R, level), difficulty);
+  return packQuestion(gen(R, level), difficulty, R);
 }

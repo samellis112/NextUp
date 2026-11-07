@@ -6,7 +6,7 @@
    that alters output for a given seed, so an old cached tab and a fresh tab
    never disagree about today's puzzle. */
 
-export const DAILY_GEN_VERSION = 5;
+export const DAILY_GEN_VERSION = 6;
 export const DAILY_LENGTH = 5;
 
 /* Day #1 — launch day of the daily challenge. */
@@ -27,7 +27,7 @@ export function dailyNumber(dayKey = todayKey()) {
 }
 
 export function dailySeed(dayKey = todayKey()) {
-  return `irt-daily-v${DAILY_GEN_VERSION}-${dayKey}`;
+  return `nextup-daily-v${DAILY_GEN_VERSION}-${dayKey}`;
 }
 
 /* Difficulty ramp for the first four daily puzzles — the fifth is always the
@@ -62,7 +62,7 @@ export function shareText({ number, triesGrid, solved, total, timeMs, streak, ur
   const secs = t % 60;
   const time = mins ? `${mins}:${String(secs).padStart(2, '0')}` : `${secs}s`;
   const lines = [
-    `Inductive #${number} ${solved}/${total} ⏱ ${time}`,
+    `Next Up #${number} ${solved}/${total} ⏱ ${time}`,
     tries,
   ];
   if (streak >= 2) lines.push(`🔥 ${streak}-day streak`);

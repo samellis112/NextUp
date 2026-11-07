@@ -19,7 +19,7 @@ function write(key, value) {
 
 /* ---------- Practice history (legacy key kept so existing players keep their data) ---------- */
 
-const HISTORY_KEY = 'irt-history-v1';
+const HISTORY_KEY = 'nextup-history-v1';
 
 export function loadHistory() {
   const h = read(HISTORY_KEY);
@@ -34,7 +34,7 @@ export function saveHistoryEntry(entry) {
 
 /* ---------- Daily challenge results ---------- */
 
-const DAILY_KEY = 'irt-daily-v1';
+const DAILY_KEY = 'nextup-daily-v1';
 
 /* shape: { results: { 'YYYY-MM-DD': { score, total, timeMs, grid: ['g'|'r', ...] } } } */
 export function loadDaily() {
@@ -115,7 +115,7 @@ export function markScorePosted(kind, key) {
 
 /* ---------- One-time flags ---------- */
 
-const FLAGS_KEY = 'irt-flags-v1';
+const FLAGS_KEY = 'nextup-flags-v1';
 
 export function getFlag(name) {
   const f = read(FLAGS_KEY) || {};
@@ -129,7 +129,7 @@ export function setFlag(name) {
 }
 
 /* Welcome-modal bookkeeping (legacy key preserved). */
-const WELCOMED_KEY = 'irt-welcomed-v1';
+const WELCOMED_KEY = 'nextup-welcomed-v1';
 
 export function wasWelcomed(userId) {
   const seen = read(WELCOMED_KEY);
@@ -144,7 +144,7 @@ export function markWelcomed(userId) {
 }
 
 /* Pending group-invite code (survives the OAuth redirect). */
-const PENDING_JOIN_KEY = 'irt-pending-join-v1';
+const PENDING_JOIN_KEY = 'nextup-pending-join-v1';
 
 export function getPendingJoin() { return read(PENDING_JOIN_KEY); }
 export function setPendingJoin(code) { write(PENDING_JOIN_KEY, code); }

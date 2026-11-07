@@ -1,6 +1,7 @@
 /* Game orchestration: menu, daily challenge, practice rounds, results,
    stats, history — local-first; account features layer on top. */
 
+import './migrate.js'; // must stay first: renames saved data before anything reads it
 import { makeRng, rngHelpers } from './rng.js';
 import { renderPanel, panelEq } from './panels.js';
 import { generateProblem, generateNestedFinale } from './generators.js';
@@ -22,7 +23,7 @@ import {
 } from './social.js';
 
 const PRACTICE_LENGTH = 5;
-const DAILY_PROGRESS_KEY = 'irt-daily-progress-v1';
+const DAILY_PROGRESS_KEY = 'nextup-daily-progress-v1';
 
 let practiceDifficulty = 'medium';
 let game = null;
@@ -627,7 +628,7 @@ function howToPlay(fromBoot) {
     },
   };
   openModal(`
-    <h3>Welcome to Inductive</h3>
+    <h3>Welcome to Next Up</h3>
     <p class="howto-note"><b>Every day, five pattern puzzles — the same five for everyone.</b>
       Each one hides a rule. Spot it, then <b>build</b> what comes next.</p>
     <div class="howto-example">

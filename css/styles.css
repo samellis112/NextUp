@@ -560,13 +560,13 @@ h1.round-title { font-size: 22px; margin: 0; font-weight: 500; }
 
 /* ----- Game feel: shake, streak glow, pulses ----- */
 /* Decaying horizontal shake on the puzzle panel (never the viewport). */
-@keyframes irt-shake {
+@keyframes nu-shake {
   10%, 90% { transform: translateX(-1px); }
   20%, 80% { transform: translateX(2px); }
   30%, 50%, 70% { transform: translateX(-4px); }
   40%, 60% { transform: translateX(4px); }
 }
-.panel.shake { animation: irt-shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+.panel.shake { animation: nu-shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
 
 /* Streak heat: fixed glow layer behind everything; opacity-only changes. */
 .streak-glow {
@@ -577,21 +577,21 @@ h1.round-title { font-size: 22px; margin: 0; font-weight: 500; }
   opacity: 0;
   transition: opacity 0.6s ease-out, background 0.6s ease-out;
 }
-@keyframes irt-glow-tick {
+@keyframes nu-glow-tick {
   0% { transform: scale(1); }
   40% { transform: scale(1.04); }
   100% { transform: scale(1); }
 }
-.streak-glow.glow-tick { animation: irt-glow-tick 0.5s ease-out; }
+.streak-glow.glow-tick { animation: nu-glow-tick 0.5s ease-out; }
 .container, .screen { position: relative; z-index: 1; }
 
 /* Correct-answer pulse on the revealed tile (200ms overshoot). */
-@keyframes irt-pop {
+@keyframes nu-pop {
   0% { transform: scale(0.92); }
   60% { transform: scale(1.06); }
   100% { transform: scale(1); }
 }
-.tile.correct { animation: irt-pop 0.22s cubic-bezier(.175,.885,.32,1.275); }
+.tile.correct { animation: nu-pop 0.22s cubic-bezier(.175,.885,.32,1.275); }
 
 @media (prefers-reduced-motion: reduce) {
   .panel.shake { animation: none; outline: 2px solid var(--wrong); outline-offset: 2px; }

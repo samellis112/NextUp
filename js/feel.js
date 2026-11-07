@@ -10,7 +10,7 @@
      green → gold and intensity grows with consecutive solves. Opacity-only
      animation. Resets on a miss. */
 
-const MUTE_KEY = 'irt-muted-v1';
+const MUTE_KEY = 'nextup-muted-v1';
 
 export const reducedMotion = () =>
   window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -123,35 +123,58 @@ function genDots3(R, color) {
   };
 }
 
-/* 5x5 — bigger, showier growth: a diamond opening out, a cross reaching the
-   edges, or a diagonal line sweeping across. */
+/* Clockwise spiral order of an n×n grid, starting top-left. Walks with a
+   turn-when-blocked rule (robust — a bounds-shrinking version double-counts). */
+function spiralOrder(n) {
+  const grid = Array.from({ length: n }, () => Array(n).fill(false));
+  const order = [];
+  const dr = [0, 1, 0, -1], dc = [1, 0, -1, 0]; // right, down, left, up
+  let r = 0, c = 0, d = 0;
+  for (let k = 0; k < n * n; k++) {
+    order.push(r * n + c);
+    grid[r][c] = true;
+    let nr = r + dr[d], nc = c + dc[d];
+    if (!(nr >= 0 && nr < n && nc >= 0 && nc < n && !grid[nr][nc])) {
+      d = (d + 1) % 4;
+      nr = r + dr[d]; nc = c + dc[d];
+    }
+    r = nr; c = nc;
+  }
+  return order;
+}
+
+/* 5x5 — asymmetric, trace-the-path growth: a spiral winding in, a snake
+   weaving across the rows, or a diagonal line sweeping over. */
 function genDots5(R, color) {
   const dotToken = { kind: 'circle', fill: color, scale: 0.8 };
-  const idx = (r, c) => r * 5 + c;
-  const mode = R.pick(['diamond', 'cross', 'sweep']);
+  const mode = R.pick(['spiral', 'snake', 'sweep']);
   let cellsAt, rule;
 
-  if (mode === 'diamond') {
-    cellsAt = i => {
-      const out = [];
-      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (Math.abs(r - 2) + Math.abs(c - 2) <= i) out.push(idx(r, c));
-      return out;
-    };
-    rule = 'A diamond opens one step outward from the centre each panel.';
-  } else if (mode === 'cross') {
-    cellsAt = i => {
-      const out = [];
-      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if ((r === 2 && Math.abs(c - 2) <= i) || (c === 2 && Math.abs(r - 2) <= i)) out.push(idx(r, c));
-      return out;
-    };
-    rule = 'The cross reaches one cell further along each arm every panel.';
+  if (mode === 'spiral') {
+    let order = spiralOrder(5);
+    if (R.chance(0.5)) order = order.slice().reverse(); // wind outward from the centre instead
+    const step = R.pick([4, 5]);
+    const start = 2 + R.int(3);
+    cellsAt = i => order.slice(0, Math.min(25, start + step * i));
+    rule = 'The dots wind along a spiral, a few more added each panel.';
+  } else if (mode === 'snake') {
+    const order = [];
+    for (let r = 0; r < 5; r++) {
+      const row = [0, 1, 2, 3, 4].map(c => r * 5 + c);
+      if (r % 2 === 1) row.reverse(); // weave back the other way each row
+      order.push(...row);
+    }
+    const step = R.pick([4, 5]);
+    const start = 2 + R.int(3);
+    cellsAt = i => order.slice(0, Math.min(25, start + step * i));
+    rule = 'The dots fill back and forth along the rows (a snake), a few more each panel.';
   } else {
     const dir = R.chance(0.5) ? 1 : -1;
     const startK = dir === 1 ? 0 : 8;
     cellsAt = i => {
       const k = startK + dir * i;
       const out = [];
-      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (r + c === k) out.push(idx(r, c));
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (r + c === k) out.push(r * 5 + c);
       return out;
     };
     rule = `A diagonal line sweeps across, moving one step ${dir === 1 ? 'down-right' : 'up-left'} each panel.`;

@@ -369,7 +369,9 @@ export function renderPanel(panel, size = 120) {
       content += tokenSvg(tok, cx, cy, tsz);
     }
   }
-  if (panel.center) content += tokenSvg(panel.center, half, half, 38);
+  // Outer-shape puzzles (a shape with an inner shape) render the outer ~2x
+  // larger so the outer shape is clearly readable; a plain centre stays 38.
+  if (panel.center) content += tokenSvg(panel.center, half, half, panel.center.inner ? 80 : 38);
   if (panel.text != null && panel.text !== '') {
     const str = String(panel.text);
     const fs = str.length <= 3 ? 44 : str.length <= 5 ? 32 : 24;

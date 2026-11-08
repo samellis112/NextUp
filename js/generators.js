@@ -19,38 +19,15 @@
    challenge can run on a shared seed. */
 
 import { SHAPES, COLOR_NAMES, TEXTURES, panelEq, deepClone } from './panels.js';
+import {
+  SEQ_LEN, BORDER8, FILL9, COLOR_CYCLES, flip, uniq, cwq, rotateQuadrants,
+  rot90, flipH, randomOrientation, shapePalette, fiveFills, matrixFrames,
+} from './puzzles/shared.js';
+import { genDots } from './puzzles/dots.js';
 
-const SEQ_LEN = 4; // frames shown before the "?"
-
-/* Quadrant indices run clockwise TL→TR→BR→BL, so +1 is one clockwise step. */
-const cwq = (i, k) => (((i + k) % 4) + 4) % 4;
-/* 3x3 border cells in clockwise order. */
-const BORDER8 = [0, 1, 2, 5, 8, 7, 6, 3];
-/* Fill order for counting patterns — border first, centre last (9 slots). */
-const FILL9 = [0, 1, 2, 5, 8, 7, 6, 3, 4];
-
-/* Ordered color triples with strong luminance spread (colorblind-safe),
-   drawn from the four-color palette (blue/orange/green/red). */
-const COLOR_CYCLES = [
-  ['blue', 'orange', 'green'],
-  ['red', 'green', 'blue'],
-  ['orange', 'red', 'blue'],
-];
-
-const flip = f => (f === 'solid' ? 'outline' : 'solid');
-const uniq = arr => [...new Set(arr)];
-
-function rotateQuadrants(quads, k) {
-  const out = [null, null, null, null];
-  for (let i = 0; i < 4; i++) out[cwq(i, k)] = quads[i];
-  return out;
-}
-
-/* A few decoy shapes added to a palette alongside the shape(s) actually in play. */
-function shapePalette(R, inPlay, extra = 2) {
-  const others = R.sample(SHAPES.filter(k => !inPlay.includes(k)), extra);
-  return R.shuffle(uniq([...inPlay, ...others]));
-}
+/* Shared generation helpers (SEQ_LEN, BORDER8, COLOR_CYCLES, shapePalette,
+   fiveFills, matrixFrames, rot90/randomOrientation, …) live in
+   js/puzzles/shared.js and are imported above. */
 
 /* ============================================================
    Sequence generators
@@ -60,138 +37,7 @@ function shapePalette(R, inPlay, extra = 2) {
    Every mode emits explicit cell sets per panel; the answer is clicked
    straight into the inline 3x3 grid. */
 
-/* 3x3 index transforms — used to randomize any traversal order's
-   orientation, so the same logical rule reads differently every time. */
-const rot90 = p => {
-  const r = Math.floor(p / 3), c = p % 3;
-  return c * 3 + (2 - r);
-};
-const flipH = p => {
-  const r = Math.floor(p / 3), c = p % 3;
-  return r * 3 + (2 - c);
-};
-function randomOrientation(R, order) {
-  let out = order.slice();
-  const turns = R.int(4);
-  for (let t = 0; t < turns; t++) out = out.map(rot90);
-  if (R.chance(0.5)) out = out.map(flipH);
-  return out;
-}
-
-/* Dots: intuitive, satisfying patterns you click straight into the grid.
-   3x3 for easy/medium; some 5x5 for the bigger, showier patterns. */
-function genDots(R, level) {
-  const color = level >= 3 ? R.pick(['blue', 'red', 'green']) : 'solid';
-  return (level >= 3 && R.chance(0.6)) ? genDots5(R, color) : genDots3(R, color);
-}
-
-/* 3x3 — count up, follow a moving dot, or a dot circling the edge. Clear,
-   fixed orientation (reads top-left → right → down), light variety. */
-function genDots3(R, color) {
-  const dotToken = { kind: 'circle', fill: color, scale: 0.8 };
-  const READ = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-  const BORDER = [0, 1, 2, 5, 8, 7, 6, 3];
-  const mode = R.pick(['count', 'move', 'border']);
-  let cellsAt, rule;
-
-  if (mode === 'count') {
-    const step = R.pick([1, 2]);
-    const start = 1 + R.int(2);
-    cellsAt = i => READ.slice(0, Math.min(9, start + step * i));
-    rule = `Each panel has ${step} more dot${step > 1 ? 's' : ''} than the one before.`;
-  } else if (mode === 'move') {
-    const start = R.int(4);
-    cellsAt = i => [Math.min(8, start + i)];
-    rule = 'One dot moves forward one space each panel (left to right, top to bottom).';
-  } else {
-    const dir = R.chance(0.5) ? 1 : 7; // +1 clockwise, +7 ≡ −1 counter
-    const start = R.int(8);
-    cellsAt = i => [BORDER[(start + dir * i) % 8]];
-    rule = `One dot steps ${dir === 1 ? 'clockwise' : 'counter-clockwise'} around the edge each panel.`;
-  }
-
-  const panelAt = i => {
-    const cells = Array(9).fill(null);
-    for (const p of cellsAt(i)) cells[p] = { ...dotToken };
-    return { grid3: true, cols: 3, cells };
-  };
-  const frames = [];
-  for (let i = 0; i < SEQ_LEN; i++) frames.push(panelAt(i));
-  return {
-    type: 'sequence', frames, next: panelAt(SEQ_LEN), rule,
-    answerSpec: { kind: 'dots', dotToken, grid3: true, cols: 3, cellPositions: READ.slice() },
-  };
-}
-
-/* Clockwise spiral order of an n×n grid, starting top-left. Walks with a
-   turn-when-blocked rule (robust — a bounds-shrinking version double-counts). */
-function spiralOrder(n) {
-  const grid = Array.from({ length: n }, () => Array(n).fill(false));
-  const order = [];
-  const dr = [0, 1, 0, -1], dc = [1, 0, -1, 0]; // right, down, left, up
-  let r = 0, c = 0, d = 0;
-  for (let k = 0; k < n * n; k++) {
-    order.push(r * n + c);
-    grid[r][c] = true;
-    let nr = r + dr[d], nc = c + dc[d];
-    if (!(nr >= 0 && nr < n && nc >= 0 && nc < n && !grid[nr][nc])) {
-      d = (d + 1) % 4;
-      nr = r + dr[d]; nc = c + dc[d];
-    }
-    r = nr; c = nc;
-  }
-  return order;
-}
-
-/* 5x5 — asymmetric, trace-the-path growth: a spiral winding in, a snake
-   weaving across the rows, or a diagonal line sweeping over. */
-function genDots5(R, color) {
-  const dotToken = { kind: 'circle', fill: color, scale: 0.8 };
-  const mode = R.pick(['spiral', 'snake', 'sweep']);
-  let cellsAt, rule;
-
-  if (mode === 'spiral') {
-    let order = spiralOrder(5);
-    if (R.chance(0.5)) order = order.slice().reverse(); // wind outward from the centre instead
-    const step = R.pick([4, 5]);
-    const start = 2 + R.int(3);
-    cellsAt = i => order.slice(0, Math.min(25, start + step * i));
-    rule = 'The dots wind along a spiral, a few more added each panel.';
-  } else if (mode === 'snake') {
-    const order = [];
-    for (let r = 0; r < 5; r++) {
-      const row = [0, 1, 2, 3, 4].map(c => r * 5 + c);
-      if (r % 2 === 1) row.reverse(); // weave back the other way each row
-      order.push(...row);
-    }
-    const step = R.pick([4, 5]);
-    const start = 2 + R.int(3);
-    cellsAt = i => order.slice(0, Math.min(25, start + step * i));
-    rule = 'The dots fill back and forth along the rows (a snake), a few more each panel.';
-  } else {
-    const dir = R.chance(0.5) ? 1 : -1;
-    const startK = dir === 1 ? 0 : 8;
-    cellsAt = i => {
-      const k = startK + dir * i;
-      const out = [];
-      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (r + c === k) out.push(r * 5 + c);
-      return out;
-    };
-    rule = `A diagonal line sweeps across, moving one step ${dir === 1 ? 'down-right' : 'up-left'} each panel.`;
-  }
-
-  const panelAt = i => {
-    const cells = Array(25).fill(null);
-    for (const p of cellsAt(i)) cells[p] = { ...dotToken };
-    return { grid5: true, cols: 5, cells };
-  };
-  const frames = [];
-  for (let i = 0; i < SEQ_LEN; i++) frames.push(panelAt(i));
-  return {
-    type: 'sequence', frames, next: panelAt(SEQ_LEN), rule,
-    answerSpec: { kind: 'dots', dotToken, grid5: true, cols: 5, cellPositions: [...Array(25).keys()] },
-  };
-}
+/* genDots lives in js/puzzles/dots.js (imported above). */
 
 /* Fill cycles through three colors; harder levels alternate the shape too.
    (Size rules were removed — relative size is unjudgeable in a blank slot.) */
@@ -274,21 +120,6 @@ function genAlternation(R, level) {
       : 'The fill alternates between solid and outline.',
     answerSpec: { kind: 'center', shapes: shapePalette(R, kinds), fills: ['solid', 'outline'], sizes: null },
   };
-}
-
-/* Five visually-distinct fills from 4 colors + 2 textures: three plain colors,
-   then two textured accents (one per texture). All five read apart even though
-   we only have four colors. */
-function fiveFills(R) {
-  const c = R.shuffle(COLOR_NAMES.slice());
-  const t = R.shuffle(TEXTURES.slice());
-  return [
-    { color: c[0] },
-    { color: c[1] },
-    { color: c[2] },
-    { color: c[3 % c.length], texture: t[0] },
-    { color: c[0], texture: t[1] },
-  ];
 }
 
 /* Nested "pattern of 5" puzzle (the owner's reference mechanic).
@@ -378,12 +209,6 @@ const genNestedCircleDouble = (R, level) => genNestedShape(R, 4, 'circle');
 /* ============================================================
    Matrix (3x3) generators — Raven's style. The answer is the empty cell.
    ============================================================ */
-
-function matrixFrames(cellAt) {
-  const frames = [];
-  for (let i = 0; i < 8; i++) frames.push(cellAt(Math.floor(i / 3), i % 3));
-  return { frames, next: cellAt(2, 2) };
-}
 
 /* Distribution of three: each row/column holds each value exactly once. */
 function genMatrixLatin(R, level) {

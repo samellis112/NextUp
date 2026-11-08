@@ -7,10 +7,10 @@
 <meta name="description" content="Five pattern puzzles a day. Spot the rule, beat your streak, share your grid." />
 <meta property="og:title" content="Next Up — A Daily Reasoning Challenge" />
 <meta property="og:description" content="Five pattern puzzles a day. Spot the rule, beat your streak, share your grid." />
-<meta name="theme-color" content="#5bb450" />
+<meta name="theme-color" content="#024089" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -31,7 +31,7 @@
 
     <!-- ============ DAILY INTRO (default landing while today's daily is unfinished) ============ -->
     <div class="screen menu daily-intro" id="screen-daily-intro">
-      <h1>Next Up</h1>
+      <h1 class="logo-hero" aria-label="Next Up"></h1>
       <div class="subtitle" id="intro-title">Daily Challenge</div>
       <p class="intro-note" id="intro-sub">5 puzzles · 3 tries each · the same for everyone</p>
       <p class="intro-note">Spot each hidden rule and build the answer right inside the puzzle.
@@ -49,7 +49,7 @@
 
     <!-- ============ MAIN MENU ============ -->
     <div class="screen menu" id="screen-menu">
-      <h1>Next Up</h1>
+      <h1 class="logo-hero" aria-label="Next Up"></h1>
       <div class="subtitle">Spot the rule. Five puzzles a day. Three tries each.</div>
       <div class="streak-chip" id="streak-chip" hidden></div>
 
@@ -150,6 +150,7 @@
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="module" src="js/logo.js"></script>
 <script type="module" src="js/game.js"></script>
 </body>
 </html>

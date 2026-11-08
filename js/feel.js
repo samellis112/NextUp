@@ -88,15 +88,15 @@ export function playSound(kind) {
 
 /* ---------- streak heat ---------- */
 
-/* Hue walk: cool green → warm gold as the streak climbs. Capped at level 6. */
+/* Hue walk: a single brand orange that deepens as the streak climbs. Capped at level 6. */
 const HEAT = [
   { hue: null, opacity: 0 },                 // 0 — off
-  { hue: '#5bb450', opacity: 0.10 },         // 1
-  { hue: '#7cb83f', opacity: 0.16 },         // 2
-  { hue: '#a9b832', opacity: 0.22 },         // 3
-  { hue: '#cfa928', opacity: 0.28 },         // 4
-  { hue: '#e69f00', opacity: 0.34 },         // 5
-  { hue: '#f08c00', opacity: 0.42 },         // 6+
+  { hue: '#fda300', opacity: 0.06 },         // 1
+  { hue: '#fda300', opacity: 0.10 },         // 2
+  { hue: '#fda300', opacity: 0.15 },         // 3
+  { hue: '#fda300', opacity: 0.20 },         // 4
+  { hue: '#fda300', opacity: 0.27 },         // 5
+  { hue: '#fda300', opacity: 0.34 },         // 6+
 ];
 
 let glowEl = null;

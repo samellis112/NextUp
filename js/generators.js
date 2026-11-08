@@ -78,80 +78,95 @@ function randomOrientation(R, order) {
   return out;
 }
 
-const SCAN_ORDERS = [
-  { name: 'spiral', order: [0, 1, 2, 5, 8, 7, 6, 3, 4], desc: 'spiralling in toward the centre' },
-  { name: 'columns', order: [0, 3, 6, 1, 4, 7, 2, 5, 8], desc: 'column by column' },
-  { name: 'diagonals', order: [0, 1, 3, 2, 4, 6, 5, 7, 8], desc: 'diagonal by diagonal' },
-  { name: 'snake', order: [0, 1, 2, 5, 4, 3, 6, 7, 8], desc: 'snaking through the rows' },
-];
-
+/* Dots: intuitive, satisfying patterns you click straight into the grid.
+   3x3 for easy/medium; some 5x5 for the bigger, showier patterns. */
 function genDots(R, level) {
   const color = level >= 3 ? R.pick(['blue', 'red', 'green']) : 'solid';
+  return (level >= 3 && R.chance(0.6)) ? genDots5(R, color) : genDots3(R, color);
+}
+
+/* 3x3 — count up, follow a moving dot, or a dot circling the edge. Clear,
+   fixed orientation (reads top-left → right → down), light variety. */
+function genDots3(R, color) {
   const dotToken = { kind: 'circle', fill: color, scale: 0.8 };
-  const mode = R.pick(['scan', 'march', 'mirror', 'blink']);
+  const READ = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const BORDER = [0, 1, 2, 5, 8, 7, 6, 3];
+  const mode = R.pick(['count', 'move', 'border']);
   let cellsAt, rule;
 
-  if (mode === 'scan') {
-    // Dots accumulate along a hidden traversal order, in a random orientation.
-    const scan = R.pick(SCAN_ORDERS);
-    const order = randomOrientation(R, scan.order);
-    const step = level >= 2 ? R.pick([1, 2]) : 1;
-    const start = 1 + R.int(Math.max(1, 9 - step * SEQ_LEN));
-    cellsAt = i => order.slice(0, Math.min(9, start + step * i));
-    rule = `${step === 1 ? 'One dot is' : 'Two dots are'} added each panel, filling the grid ${scan.desc}.`;
-  } else if (mode === 'march') {
-    // A cluster slides one cell per panel (wrapping), leaving a trail dot at
-    // each spot its anchor visited. The trail keeps the answer from ever
-    // matching an earlier panel (a pure wrap-slide repeats every 3 panels).
-    const shapes = [[0, 1, 3], [0, 1, 4], [1, 3, 4]];
-    const base = randomOrientation(R, R.pick(shapes));
-    const [dr, dc] = R.pick([[0, 1], [1, 0], [1, 1]]);
-    const shift = (p, i) => {
-      const r = (Math.floor(p / 3) + dr * i) % 3;
-      const c = (p % 3 + dc * i) % 3;
-      return r * 3 + c;
-    };
-    cellsAt = i => {
-      const cluster = base.map(p => shift(p, i));
-      const trail = [];
-      for (let k = 0; k < i; k++) trail.push(shift(base[0], k));
-      return [...new Set([...cluster, ...trail])];
-    };
-    rule = `The dot cluster slides ${dr && dc ? 'diagonally' : dr ? 'down' : 'right'} one cell each panel (wrapping around), and leaves one trail dot behind at each stop.`;
-  } else if (mode === 'mirror') {
-    // Dots grow in mirrored pairs around the centre column.
-    const additions = R.shuffle([[0, 2], [3, 5], [6, 8], [1], [7]]);
-    const base = [4];
-    cellsAt = i => base.concat(additions.slice(0, i + 1).flat());
-    rule = 'Each panel adds dots symmetrically around the centre column — the grid stays mirrored.';
+  if (mode === 'count') {
+    const step = R.pick([1, 2]);
+    const start = 1 + R.int(2);
+    cellsAt = i => READ.slice(0, Math.min(9, start + step * i));
+    rule = `Each panel has ${step} more dot${step > 1 ? 's' : ''} than the one before.`;
+  } else if (mode === 'move') {
+    const start = R.int(4);
+    cellsAt = i => [Math.min(8, start + i)];
+    rule = 'One dot moves forward one space each panel (left to right, top to bottom).';
   } else {
-    // Two clusters take turns growing. One shared orientation keeps the two
-    // groups on opposite sides (independent transforms could collide them).
-    const turns = R.int(4), flip = R.chance(0.5);
-    const orient = p => {
-      let q = p;
-      for (let t = 0; t < turns; t++) q = rot90(q);
-      return flip ? flipH(q) : q;
-    };
-    const left = [0, 3, 6, 1].map(orient);
-    const right = [2, 5, 8, 7].map(orient);
-    const countsA = [1, 2, 2, 3, 3];
-    const countsB = [1, 1, 2, 2, 3];
-    cellsAt = i => left.slice(0, countsA[i]).concat(right.slice(0, countsB[i]));
-    rule = 'Two clusters take turns: one grows on the odd panels, the other on the even panels.';
+    const dir = R.chance(0.5) ? 1 : 7; // +1 clockwise, +7 ≡ −1 counter
+    const start = R.int(8);
+    cellsAt = i => [BORDER[(start + dir * i) % 8]];
+    rule = `One dot steps ${dir === 1 ? 'clockwise' : 'counter-clockwise'} around the edge each panel.`;
   }
 
   const panelAt = i => {
     const cells = Array(9).fill(null);
     for (const p of cellsAt(i)) cells[p] = { ...dotToken };
-    return { grid3: true, cells };
+    return { grid3: true, cols: 3, cells };
   };
   const frames = [];
   for (let i = 0; i < SEQ_LEN; i++) frames.push(panelAt(i));
   return {
-    type: 'sequence', frames, next: panelAt(SEQ_LEN),
-    rule,
-    answerSpec: { kind: 'dots', dotToken, grid3: true, cellPositions: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
+    type: 'sequence', frames, next: panelAt(SEQ_LEN), rule,
+    answerSpec: { kind: 'dots', dotToken, grid3: true, cols: 3, cellPositions: READ.slice() },
+  };
+}
+
+/* 5x5 — bigger, showier growth: a diamond opening out, a cross reaching the
+   edges, or a diagonal line sweeping across. */
+function genDots5(R, color) {
+  const dotToken = { kind: 'circle', fill: color, scale: 0.8 };
+  const idx = (r, c) => r * 5 + c;
+  const mode = R.pick(['diamond', 'cross', 'sweep']);
+  let cellsAt, rule;
+
+  if (mode === 'diamond') {
+    cellsAt = i => {
+      const out = [];
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (Math.abs(r - 2) + Math.abs(c - 2) <= i) out.push(idx(r, c));
+      return out;
+    };
+    rule = 'A diamond opens one step outward from the centre each panel.';
+  } else if (mode === 'cross') {
+    cellsAt = i => {
+      const out = [];
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if ((r === 2 && Math.abs(c - 2) <= i) || (c === 2 && Math.abs(r - 2) <= i)) out.push(idx(r, c));
+      return out;
+    };
+    rule = 'The cross reaches one cell further along each arm every panel.';
+  } else {
+    const dir = R.chance(0.5) ? 1 : -1;
+    const startK = dir === 1 ? 0 : 8;
+    cellsAt = i => {
+      const k = startK + dir * i;
+      const out = [];
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (r + c === k) out.push(idx(r, c));
+      return out;
+    };
+    rule = `A diagonal line sweeps across, moving one step ${dir === 1 ? 'down-right' : 'up-left'} each panel.`;
+  }
+
+  const panelAt = i => {
+    const cells = Array(25).fill(null);
+    for (const p of cellsAt(i)) cells[p] = { ...dotToken };
+    return { grid5: true, cols: 5, cells };
+  };
+  const frames = [];
+  for (let i = 0; i < SEQ_LEN; i++) frames.push(panelAt(i));
+  return {
+    type: 'sequence', frames, next: panelAt(SEQ_LEN), rule,
+    answerSpec: { kind: 'dots', dotToken, grid5: true, cols: 5, cellPositions: [...Array(25).keys()] },
   };
 }
 
@@ -402,43 +417,63 @@ function genMatrixRowCount(R, level) {
   };
 }
 
-/* Boolean overlay: third column = col1 OR col2 (hard) or XOR (expert-tier rule). */
+/* Combine: in every row, the third cell is the first two laid on top of each
+   other (every dot from both). Rendered A + B = C with the two source cells
+   highlighted, so "how they combine" is obvious. All 9 cells are in play (the
+   centre is clickable too). */
 function genMatrixOverlay(R, level) {
-  const xor = level >= 4;
-  const positions = [0, 1, 2, 3, 5, 6, 7, 8]; // 3x3 minus centre
+  const positions = [0, 1, 2, 3, 4, 5, 6, 7, 8]; // all cells, centre included
   const orSet = (a, b) => new Set([...a, ...b]);
-  const xorSet = (a, b) => {
-    const out = new Set();
-    for (const x of a) if (!b.has(x)) out.add(x);
-    for (const x of b) if (!a.has(x)) out.add(x);
-    return out;
-  };
   const rows = [];
   for (let r = 0; r < 3; r++) {
     let a, b;
     for (let tries = 0; tries < 60; tries++) {
-      a = new Set(R.sample(positions, 3 + R.int(2)));
-      b = new Set(R.sample(positions, 3 + R.int(2)));
+      a = new Set(R.sample(positions, 2 + R.int(2)));
+      b = new Set(R.sample(positions, 2 + R.int(2)));
       const inter = [...a].filter(x => b.has(x)).length;
+      // overlap a little (so the union isn't just A beside B) but each keeps a dot of its own
       if (inter >= 1 && a.size - inter >= 1 && b.size - inter >= 1) break;
     }
     rows.push([a, b]);
   }
-  const combine = xor ? xorSet : orSet;
   const dotToken = { kind: 'circle', fill: 'solid', scale: 0.85 };
   const setToPanel = s => {
     const cells = Array(9).fill(null);
     for (const p of s) cells[p] = { ...dotToken };
     return { grid3: true, cells };
   };
-  const cellAt = (r, c) => setToPanel(c === 0 ? rows[r][0] : c === 1 ? rows[r][1] : combine(rows[r][0], rows[r][1]));
+  const cellAt = (r, c) => setToPanel(c === 0 ? rows[r][0] : c === 1 ? rows[r][1] : orSet(rows[r][0], rows[r][1]));
   const { frames, next } = matrixFrames(cellAt);
   return {
-    type: 'matrix', frames, next,
-    rule: xor
-      ? 'Third column = the first two combined, but dots appearing in BOTH cancel out (XOR).'
-      : 'Third column = all dots from the first two cells combined (union).',
+    type: 'matrix', family: 'combine', frames, next,
+    rule: 'Each row: the first two cells laid together make the third (every dot from both).',
+    instruction: 'A + B = C — place every dot from the two highlighted cells.',
     answerSpec: { kind: 'dots', dotToken, grid3: true, cellPositions: positions.slice() },
+  };
+}
+
+/* Numbers that add up: a 3x3 of small numbers with the row totals down the
+   right and the column totals along the bottom. One cell is blank — the row
+   and column it sits in are highlighted; fill the number that makes both
+   totals work. Light mental math, clear visual target. */
+function genMatrixSum(R, level) {
+  const grid = [];
+  for (let r = 0; r < 3; r++) {
+    const row = [];
+    for (let c = 0; c < 3; c++) row.push(1 + R.int(9)); // single digits
+    grid.push(row);
+  }
+  const rowSums = grid.map(row => row[0] + row[1] + row[2]);
+  const colSums = [0, 1, 2].map(c => grid[0][c] + grid[1][c] + grid[2][c]);
+  const br = R.int(3), bc = R.int(3);
+  const answer = grid[br][bc];
+  return {
+    type: 'matrix', family: 'matrixsum',
+    frames: [], next: { text: String(answer) },
+    grid, rowSums, colSums, blank: { r: br, c: bc },
+    rule: `Row ${br + 1} adds to ${rowSums[br]} and column ${bc + 1} adds to ${colSums[bc]}, so the missing number is ${answer}.`,
+    instruction: 'Fill the blank so its highlighted row and column each add up to the totals shown.',
+    answerSpec: { kind: 'number', maxLen: 2 },
   };
 }
 
@@ -723,14 +758,14 @@ const POOLS = {
   ],
   medium: [
     [genNestedCircle, 2], [genColorCycle, 3], [genNesting, 2], [genDots, 3],
-    [genMatrixRowCount, 2], [genMatrixLatin, 2],
+    [genMatrixRowCount, 2], [genMatrixLatin, 2], [genMatrixSum, 2], [genMatrixOverlay, 2],
   ],
   hard: [
     [genNestedTriangle, 3], [genNestedSquareHard, 3], [genNestedCircleHard, 3],
     [genNestedSquareDouble, 4], [genNestedCircleDouble, 4],
     [genNumberSeq, 3], [genMonthReqs, 3], [genSchedule, 3],
     [genGridPlace, 3], [genRatioWord, 3], [genRatioBars, 3],
-    [genMatrixLatin, 4], [genMatrixOverlay, 3], [genMatrixOverlay, 4],
+    [genMatrixLatin, 4], [genMatrixOverlay, 3], [genMatrixSum, 3],
     [genMatrixRowCount, 3], [genNesting, 3],
   ],
 };
@@ -827,6 +862,8 @@ function packQuestion(q, difficulty, R) {
     answerSpec: q.answerSpec,
     difficulty,
   };
+  // Number-grid puzzles carry their board + totals for custom rendering.
+  if (q.grid) { base.grid = q.grid; base.rowSums = q.rowSums; base.colSums = q.colSums; base.blank = q.blank; }
   if (R && MC_KINDS.has(kind)) base.choice = buildChoices(q.next, q.frames, q.answerSpec, R);
   return base;
 }

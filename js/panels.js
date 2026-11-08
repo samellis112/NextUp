@@ -82,6 +82,7 @@ export function canonicalPanel(p) {
   const out = {};
   if (p.divider) out.divider = true;
   if (p.grid3) out.grid3 = true;
+  if (p.grid5) out.grid5 = true;
   if (p.text != null && p.text !== '') {
     // Numeric text compares by value ('081' === '81'); non-numeric verbatim.
     const n = Number(p.text);
@@ -335,12 +336,13 @@ export function renderPanel(panel, size = 120) {
     lines += `<line x1="${half}" y1="0" x2="${half}" y2="${s}" stroke="#111" stroke-width="1.5"/>` +
              `<line x1="0" y1="${half}" x2="${s}" y2="${half}" stroke="#111" stroke-width="1.5"/>`;
   }
-  if (panel.grid3) {
-    const t1 = s / 3, t2 = (s / 3) * 2;
-    lines += `<line x1="${t1}" y1="0" x2="${t1}" y2="${s}" stroke="#bbb" stroke-width="1"/>` +
-             `<line x1="${t2}" y1="0" x2="${t2}" y2="${s}" stroke="#bbb" stroke-width="1"/>` +
-             `<line x1="0" y1="${t1}" x2="${s}" y2="${t1}" stroke="#bbb" stroke-width="1"/>` +
-             `<line x1="0" y1="${t2}" x2="${s}" y2="${t2}" stroke="#bbb" stroke-width="1"/>`;
+  if (panel.grid3 || panel.grid5) {
+    const gcols = panel.cols || (panel.grid5 ? 5 : 3);
+    for (let k = 1; k < gcols; k++) {
+      const t = (s / gcols) * k;
+      lines += `<line x1="${t}" y1="0" x2="${t}" y2="${s}" stroke="#bbb" stroke-width="1"/>` +
+               `<line x1="0" y1="${t}" x2="${s}" y2="${t}" stroke="#bbb" stroke-width="1"/>`;
+    }
   }
 
   const pid = 'pat' + (_patternUid++) + '_';
@@ -356,13 +358,15 @@ export function renderPanel(panel, size = 120) {
     }
   }
   if (panel.cells) {
-    const step = s / 3;
-    for (let i = 0; i < 9; i++) {
+    const cols = panel.cols || (panel.cells.length > 9 ? 5 : 3);
+    const step = s / cols;
+    const tsz = step * 0.55;
+    for (let i = 0; i < panel.cells.length; i++) {
       const tok = panel.cells[i];
       if (!tok) continue;
-      const cx = (i % 3) * step + step / 2;
-      const cy = Math.floor(i / 3) * step + step / 2;
-      content += tokenSvg(tok, cx, cy, 22);
+      const cx = (i % cols) * step + step / 2;
+      const cy = Math.floor(i / cols) * step + step / 2;
+      content += tokenSvg(tok, cx, cy, tsz);
     }
   }
   if (panel.center) content += tokenSvg(panel.center, half, half, 38);

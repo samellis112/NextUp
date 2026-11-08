@@ -58,9 +58,12 @@ function toPanel(spec, st) {
     return { center };
   }
   if (spec.kind === 'dots') {
-    const cells = Array(9).fill(null);
+    const cols = spec.cols || 3;
+    const cells = Array(cols * cols).fill(null);
     for (const p of st.cells) cells[p] = { ...spec.dotToken };
-    return spec.grid3 ? { grid3: true, cells } : { cells };
+    const panel = { cells, cols };
+    if (cols === 5) panel.grid5 = true; else if (spec.grid3) panel.grid3 = true;
+    return panel;
   }
   if (spec.kind === 'nested') {
     const toSections = idxs => idxs.map(k => (k < 0 ? null : { ...spec.states[k] }));
@@ -242,12 +245,15 @@ export function mountAnswer(slot, tray, spec, onSubmit) {
   }
 
   if (spec.kind === 'dots') {
-    // Invisible 3x3 hit-grid over the slot: tap a cell to toggle its dot.
+    // Invisible N×N hit-grid over the slot: tap a cell to toggle its dot.
+    const cols = spec.cols || 3;
     const overlay = document.createElement('div');
     overlay.className = 'slot-dotgrid';
+    overlay.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    overlay.style.gridTemplateRows = `repeat(${cols}, 1fr)`;
     const usable = p => spec.cellPositions.includes(p);
-    overlay.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-      .map(p => `<button type="button" class="bld-cellhit${usable(p) ? '' : ' disabled'}" data-cell="${p}" ${usable(p) ? '' : 'disabled'} aria-label="Cell ${p + 1}"></button>`)
+    overlay.innerHTML = Array.from({ length: cols * cols }, (_, p) =>
+      `<button type="button" class="bld-cellhit${usable(p) ? '' : ' disabled'}" data-cell="${p}" ${usable(p) ? '' : 'disabled'} aria-label="Cell ${p + 1}"></button>`)
       .join('');
     slot.appendChild(overlay);
     overlay.querySelectorAll('[data-cell]:not([disabled])').forEach(b => b.addEventListener('click', () => {

@@ -159,6 +159,38 @@ function loadQuestion() {
     ui.sequence.innerHTML = q.frames
       .map(p => `<div class="tile">${renderPanel(p, 120)}</div>`)
       .join('') + `<div class="tile question" id="answer-slot"><span class="slot-ph">?</span></div>`;
+  } else if (fam === 'combine') {
+    // Each row shown as A + B = C, with the two source cells highlighted.
+    ui.sequence.className = 'combine-grid';
+    const cell = (p, cls) => `<div class="tile combine-cell${cls ? ' ' + cls : ''}">${renderPanel(p, 92)}</div>`;
+    let h = '';
+    for (let r = 0; r < 3; r++) {
+      const last = r === 2;
+      h += `<div class="combine-row">`
+        + cell(q.frames[r * 3], 'src') + `<span class="combine-op">+</span>`
+        + cell(q.frames[r * 3 + 1], 'src') + `<span class="combine-op">=</span>`
+        + (last ? `<div class="tile question combine-cell" id="answer-slot"><span class="slot-ph">?</span></div>`
+                : cell(q.frames[r * 3 + 2]))
+        + `</div>`;
+    }
+    ui.sequence.innerHTML = h;
+  } else if (fam === 'matrixsum') {
+    // 3x3 number board; the blank's row + column (and their totals) highlight.
+    ui.sequence.className = 'sumgrid-wrap';
+    let h = '<div class="sumgrid">';
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const blank = r === q.blank.r && c === q.blank.c;
+        const hl = (r === q.blank.r || c === q.blank.c) ? ' sum-hl' : '';
+        h += blank
+          ? `<div class="sum-cell sum-blank${hl}" id="answer-slot"><span class="slot-ph">?</span></div>`
+          : `<div class="sum-cell${hl}">${q.grid[r][c]}</div>`;
+      }
+      h += `<div class="sum-tot${r === q.blank.r ? ' sum-hl' : ''}">${q.rowSums[r]}</div>`;
+    }
+    for (let c = 0; c < 3; c++) h += `<div class="sum-tot${c === q.blank.c ? ' sum-hl' : ''}">${q.colSums[c]}</div>`;
+    h += `<div class="sum-corner"></div></div>`;
+    ui.sequence.innerHTML = h;
   } else if (fam === 'weeks') {
     ui.sequence.className = 'weeks';
     ui.sequence.innerHTML = q.frames

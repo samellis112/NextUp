@@ -792,6 +792,39 @@ button.next[hidden] { display: none; }
 
 /* The echoed pick (and any direct render) scales within the answer cell. */
 #answer-slot svg { max-width: 100%; max-height: 100%; }
+
+/* Combine matrix: rows shown as A + B = C, source cells highlighted. */
+.combine-grid { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 20px; }
+.combine-row { display: flex; align-items: center; gap: 6px; }
+.combine-cell { width: 92px; height: 92px; }
+.combine-cell svg { width: 100%; height: 100%; }
+.combine-cell.src { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 32%, transparent); }
+.combine-op { font-size: 24px; font-weight: 700; color: var(--muted); width: 18px; text-align: center; }
+@media (max-width: 560px) {
+  .combine-cell { width: 66px; height: 66px; }
+  .combine-op { font-size: 18px; width: 12px; }
+}
+
+/* Numbers-add-up grid: 3x3 board + row totals (right) + column totals (bottom). */
+.sumgrid-wrap { display: flex; justify-content: center; margin-bottom: 20px; }
+.sumgrid { display: grid; grid-template-columns: repeat(3, 64px) 58px; grid-auto-rows: 64px; gap: 6px; }
+.sum-cell {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 600; color: #111;
+  background: #fff; border: 2px solid #000; border-radius: 8px;
+}
+.sum-cell.sum-hl { background: color-mix(in srgb, var(--accent) 16%, #fff); }
+.sum-blank { border-style: dashed; border-color: var(--accent); position: relative; }
+.sum-blank .slot-canvas { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.sum-blank .slot-number { font-size: 26px; }
+.sum-blank .slot-ph { font-size: 28px; color: var(--accent); }
+.sum-tot { display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--muted); }
+.sum-tot.sum-hl { color: var(--accent); }
+@media (max-width: 560px) {
+  .sumgrid { grid-template-columns: repeat(3, 52px) 48px; grid-auto-rows: 52px; }
+  .sum-cell { font-size: 20px; }
+  .sum-tot { font-size: 17px; }
+}
 button.quit {
   background: transparent;
   color: var(--muted);

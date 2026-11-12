@@ -228,6 +228,26 @@ async function loadLeaderboardTab(key) {
     "No scores yet today — be the first to finish today's daily challenge.");
 }
 
+/* Where a signed-out player's daily result would land on today's board.
+   Counts players ranked strictly ahead (same order as the board: solved,
+   then attempts, then time), so ties share the better rank. Returns
+   { rank } or null if the board can't be loaded. */
+export async function potentialDailyRank({ solved, attempts, avgMs }) {
+  const { data, error } = await dailyBoardQuery();
+  if (error || !data) return null;
+  const seen = new Set();
+  const best = data.filter(r => !seen.has(r.user_id) && seen.add(r.user_id));
+  const myMs = Math.round(avgMs);
+  const ahead = best.filter(r => {
+    const s = Math.round((r.accuracy || 0) * 5);
+    if (s !== solved) return s > solved;
+    const a = r.attempts ?? Infinity;
+    if (a !== attempts) return a < attempts;
+    return r.avg_solve_ms < myMs;
+  }).length;
+  return { rank: ahead + 1 };
+}
+
 function dedupBestPerUser(rows) {
   const seen = new Set();
   return rows.filter(r => !seen.has(r.user_id) && seen.add(r.user_id)).slice(0, 50);

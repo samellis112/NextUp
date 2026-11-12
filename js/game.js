@@ -19,7 +19,7 @@ import { esc, registerScreens, showScreen, activeScreen, openModal, closeModal }
 import {
   currentUser, initAuth, capturePendingInvite, resolvePendingInvite,
   showInviteLanding, openLeaderboard, postScore,
-  signInWithGoogle, googleButtonHtml, requireAccount,
+  signInWithGoogle, googleButtonHtml, requireAccount, potentialDailyRank,
 } from './social.js';
 
 const PRACTICE_LENGTH = 5;
@@ -483,7 +483,7 @@ function showDailyResults(entry) {
 
     ${currentUser ? '' : `
       <div class="signin-upsell">
-        Don't lose that streak — sign in to save your stats across devices.
+        <span id="results-rank-msg">Sign in to put your score on today's leaderboard.</span>
         <br><button class="btn-google" id="btn-results-signin">${googleButtonHtml('Sign in with Google')}</button>
       </div>`}
 
@@ -502,8 +502,20 @@ function showDailyResults(entry) {
   document.getElementById('btn-results-menu2').addEventListener('click', () => { renderMenu(); showScreen('menu'); });
   const signinBtn = document.getElementById('btn-results-signin');
   if (signinBtn) signinBtn.addEventListener('click', signInWithGoogle);
+  if (!currentUser) showPotentialRank(entry, attempts);
 
   startCountdown();
+}
+
+/* Signed-out upsell: look up where this result would rank today and swap in
+   that message. Keeps the generic copy if the board can't be reached. */
+async function showPotentialRank(entry, attempts) {
+  const result = await potentialDailyRank({
+    solved: entry.score, attempts, avgMs: entry.timeMs / entry.total,
+  });
+  const el = document.getElementById('results-rank-msg');
+  if (!result || !el) return;
+  el.innerHTML = `You'd be <b>#${result.rank}</b> on today's leaderboard — sign in to claim your spot.`;
 }
 
 async function shareDaily(entry, streak) {

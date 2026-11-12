@@ -25,16 +25,17 @@
    encode a rule in hue alone — color rules always ride on ordered palettes
    with luminance contrast, or pair with a second attribute. */
 
-/* Four strong, well-separated hues — one each from the blue / green / orange /
-   red families, spaced around the wheel so they never read alike. Orange is a
-   true orange (the old Okabe–Ito orange looked yellow) and red is a true red,
-   pulled apart so they don't collide. Textures add a colorblind-safe second
-   channel on top, which matters most where orange/red sit closest. */
+/* Four hues drawn from the brand theme: brand orange, a brighter cut of the
+   navy secondary (true navy reads too close to the #111 "solid" fill), a teal
+   from the --correct family and a brick red that sits well beside the orange.
+   They are also spread by lightness (blue ≈ .12, red ≈ .16, green ≈ .33,
+   orange ≈ .47 relative luminance), so green/red stay apart for colorblind
+   players even before textures add their second channel. */
 export const COLORS = {
-  blue:   '#0072B2',
-  orange: '#E8730E',
-  green:  '#009E73',
-  red:    '#D11A2A',
+  blue:   '#1f5fae',
+  orange: '#fda300',
+  green:  '#2aae94',
+  red:    '#c9402f',
 };
 
 export const COLOR_NAMES = Object.keys(COLORS);

@@ -26,6 +26,14 @@
   --mark-blue: #024089;
   --mark-orange: #fda300;
   --mark-grey: #8a92a1;
+  /* Puzzle-family tags: built around the orange/navy brand pair, plus teal,
+     brick and plum as supporting hues. All pass 4.5:1 as small text. */
+  --fam-blue: #024089;
+  --fam-orange: #946000;
+  --fam-teal: #0f7b6c;
+  --fam-red: #b3362a;
+  --fam-plum: #5b3f99;
+  --danger: #b3362a;            /* wrong-answer ring, destructive hover */
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -43,6 +51,12 @@
     --focus-ring: #fda300;
     --mark-blue: #5b93e0;
     --mark-grey: #e1e3e7;
+    --fam-blue: #8db6f2;
+    --fam-orange: #fda300;
+    --fam-teal: #5cd0b6;
+    --fam-red: #f2917f;
+    --fam-plum: #b9a3e8;
+    --danger: #f2917f;
   }
 }
 * { box-sizing: border-box; }
@@ -511,16 +525,16 @@ h1.round-title { font-size: 22px; margin: 0; font-weight: 500; }
   padding: 3px 10px;
   margin-bottom: 12px;
 }
-.panel[data-family="shapes"]   { --fam-accent: #0072B2; }
-.panel[data-family="dots"]     { --fam-accent: #56B4E9; }
-.panel[data-family="matrix"]   { --fam-accent: #CC79A7; }
-.panel[data-family="nested"]   { --fam-accent: #009E73; }
-.panel[data-family="number"]   { --fam-accent: #E69F00; }
-.panel[data-family="weeks"]    { --fam-accent: #D55E00; }
-.panel[data-family="schedule"] { --fam-accent: #8b5cf6; }
-.panel[data-family="month"]    { --fam-accent: #D55E00; }
-.panel[data-family="bars"]     { --fam-accent: #0072B2; }
-.panel[data-family="word"]     { --fam-accent: #E69F00; }
+.panel[data-family="shapes"]   { --fam-accent: var(--fam-blue); }
+.panel[data-family="dots"]     { --fam-accent: var(--fam-teal); }
+.panel[data-family="matrix"]   { --fam-accent: var(--fam-plum); }
+.panel[data-family="nested"]   { --fam-accent: var(--fam-teal); }
+.panel[data-family="number"]   { --fam-accent: var(--fam-orange); }
+.panel[data-family="weeks"]    { --fam-accent: var(--fam-red); }
+.panel[data-family="schedule"] { --fam-accent: var(--fam-plum); }
+.panel[data-family="month"]    { --fam-accent: var(--fam-red); }
+.panel[data-family="bars"]     { --fam-accent: var(--fam-blue); }
+.panel[data-family="word"]     { --fam-accent: var(--fam-orange); }
 
 /* Nested puzzles read better with larger frames and no arrows between them. */
 .panel[data-family="nested"] .sequence .arrow { display: none; }
@@ -648,7 +662,7 @@ h1.round-title { font-size: 22px; margin: 0; font-weight: 500; }
 .answer-slot .slot-ph { font-size: 40px; font-weight: 300; color: var(--accent-text); }
 .answer-slot.resolved { pointer-events: none; border-style: solid; }
 .answer-slot.resolved.correct { border-color: var(--correct); box-shadow: 0 0 0 3px var(--correct); }
-.answer-slot.resolved.wrong { border-color: #d55e00; box-shadow: 0 0 0 3px #d55e00; }
+.answer-slot.resolved.wrong { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger); }
 
 /* dots: 3x3 hit-grid over the slot. While unresolved, tappable cells carry a
    faint inset outline so players can see where to tap (hover never fires on
@@ -814,7 +828,7 @@ button.next[hidden] { display: none; }
 .choice-opt:hover:not(:disabled) { border-color: var(--accent); }
 .choice-opt:disabled { cursor: default; }
 .choice-opt.opt-correct { border-color: var(--correct); box-shadow: 0 0 0 3px var(--correct); }
-.choice-opt.opt-wrong { border-color: #d55e00; box-shadow: 0 0 0 3px #d55e00; opacity: 0.55; }
+.choice-opt.opt-wrong { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger); opacity: 0.55; }
 
 /* The echoed pick (and any direct render) scales within the answer cell. */
 #answer-slot svg { max-width: 100%; max-height: 100%; }
@@ -1265,7 +1279,7 @@ button.quit:hover { color: var(--text); border-color: var(--accent); }
   font-size: 14px;
   cursor: pointer;
 }
-.danger:hover { color: #b91c1c; border-color: #b91c1c; }
+.danger:hover { color: var(--danger); border-color: var(--danger); }
 
 svg { display: block; }
 

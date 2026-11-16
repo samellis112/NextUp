@@ -428,7 +428,7 @@ function afterResolve(correct) {
   ui.next.textContent = last ? '✓' : '→';
   ui.next.setAttribute('aria-label', last ? 'See results' : 'Next puzzle');
   ui.next.hidden = false;
-  ui.next.focus();
+  ui.next.focus({ preventScroll: true }); // the result bar is pinned to the bottom, always in view
 }
 
 /* Direct-input puzzles (dots, number, calendar, schedule, bars). */

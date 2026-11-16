@@ -1,0 +1,46 @@
+/* ============================================================
+   ALTERNATE SKY — "cartoon" look (NOT loaded by default)
+   ============================================================
+   The friendly cartoon version of the puzzle 3–5 sky: flat white clouds with a
+   blue underside, a scalloped cloud floor, and a round sun with chunky rays.
+   Kept for possible later use.
+
+   To switch it on, add this line to index.html right AFTER the main
+   stylesheet link:
+
+     <link rel="stylesheet" href="css/sky-cartoon.css">
+
+   It only restyles the pieces js/levels.js already creates (.cloud, .lvl-deck,
+   .lvl-sun); cloud positions per scene come from css/styles.css. */
+
+.lvl-clouds .cloud {
+  aspect-ratio: 300 / 170;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 170'%3E%3Cg fill='%23c9e2fa' transform='translate(0 12)'%3E%3Ccircle cx='75' cy='100' r='45'/%3E%3Ccircle cx='125' cy='70' r='55'/%3E%3Ccircle cx='185' cy='62' r='60'/%3E%3Ccircle cx='240' cy='98' r='42'/%3E%3Crect x='35' y='95' width='235' height='55' rx='27'/%3E%3C/g%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='75' cy='100' r='45'/%3E%3Ccircle cx='125' cy='70' r='55'/%3E%3Ccircle cx='185' cy='62' r='60'/%3E%3Ccircle cx='240' cy='98' r='42'/%3E%3Crect x='35' y='95' width='235' height='55' rx='27'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  filter: none;
+}
+.lvl-clouds .c6, .lvl-clouds .c7, .lvl-clouds .c8 { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 170'%3E%3Cg fill='%23b9d8f6' transform='translate(0 12)'%3E%3Ccircle cx='75' cy='100' r='45'/%3E%3Ccircle cx='125' cy='70' r='55'/%3E%3Ccircle cx='185' cy='62' r='60'/%3E%3Ccircle cx='240' cy='98' r='42'/%3E%3Crect x='35' y='95' width='235' height='55' rx='27'/%3E%3C/g%3E%3Cg fill='%23e3f1ff'%3E%3Ccircle cx='75' cy='100' r='45'/%3E%3Ccircle cx='125' cy='70' r='55'/%3E%3Ccircle cx='185' cy='62' r='60'/%3E%3Ccircle cx='240' cy='98' r='42'/%3E%3Crect x='35' y='95' width='235' height='55' rx='27'/%3E%3C/g%3E%3C/svg%3E"); }
+.lvl-bg.scene-below .cloud, .lvl-bg.scene-clouds .cloud { opacity: 1; }
+
+.lvl-deck { left: -40px; right: -40px; bottom: 0; filter: none; opacity: 1; background-repeat: repeat-x; }
+.lvl-deck.back  { height: 15vw; min-height: 110px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 150'%3E%3Cg fill='%23cfe6fb'%3E%3Ccircle cx='0' cy='82' r='50'/%3E%3Ccircle cx='90' cy='62' r='58'/%3E%3Ccircle cx='190' cy='80' r='52'/%3E%3Ccircle cx='290' cy='56' r='62'/%3E%3Ccircle cx='395' cy='78' r='55'/%3E%3Ccircle cx='495' cy='60' r='58'/%3E%3Ccircle cx='600' cy='82' r='50'/%3E%3Crect x='0' y='78' width='600' height='72'/%3E%3C/g%3E%3C/svg%3E");  background-size: auto 100%; background-position: -140px bottom; }
+.lvl-deck.front { height: 10vw; min-height: 76px;  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 150'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='0' cy='82' r='50'/%3E%3Ccircle cx='90' cy='62' r='58'/%3E%3Ccircle cx='190' cy='80' r='52'/%3E%3Ccircle cx='290' cy='56' r='62'/%3E%3Ccircle cx='395' cy='78' r='55'/%3E%3Ccircle cx='495' cy='60' r='58'/%3E%3Ccircle cx='600' cy='82' r='50'/%3E%3Crect x='0' y='78' width='600' height='72'/%3E%3C/g%3E%3C/svg%3E"); background-size: auto 100%; background-position: left bottom; }
+.lvl-bg.scene-clouds .lvl-deck.back  { transform: translateY(45%); }
+.lvl-bg.scene-clouds .lvl-deck.front { transform: translateY(50%); }
+
+.lvl-sun {
+  top: -95px; left: 3%;
+  width: 330px; height: 330px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Ccircle cx='200' cy='200' r='104' fill='%23ffc928'/%3E%3Ccircle cx='200' cy='200' r='92' fill='%23ffdf4d'/%3E%3Ccircle cx='186' cy='184' r='66' fill='%23ffec80'/%3E%3Cellipse cx='166' cy='160' rx='26' ry='16' fill='%23fff8c9' transform='rotate(-35 166 160)'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 0 34px rgba(255, 236, 130, 0.9)) drop-shadow(0 0 90px rgba(255, 244, 180, 0.6));
+  transform: translateY(70px) scale(0.8);
+}
+.lvl-sun::before {
+  inset: 0; border-radius: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg fill='%23ffd23f'%3E%3Crect x='187' y='8' width='26' height='74' rx='13' transform='rotate(0 200 200)'/%3E%3Crect x='191' y='30' width='18' height='52' rx='9' transform='rotate(30 200 200)'/%3E%3Crect x='187' y='8' width='26' height='74' rx='13' transform='rotate(60 200 200)'/%3E%3Crect x='191' y='30' width='18' height='52' rx='9' transform='rotate(90 200 200)'/%3E%3Crect x='187' y='8' width='26' height='74' rx='13' transform='rotate(120 200 200)'/%3E%3Crect x='191' y='30' width='18' height='52' rx='9' transform='rotate(150 200 200)'/%3E%3Crect x='187' y='8' width='26' height='74' rx='13' transform='rotate(180 200 200)'/%3E%3Crect x='191' y='30' width='18' height='52' rx='9' transform='rotate(210 200 200)'/%3E%3Crect x='187' y='8' width='26' height='74' rx='13' transform='rotate(240 200 200)'/%3E%3Crect x='191' y='30' width='18' height='52' rx='9' transform='rotate(270 200 200)'/%3E%3Crect x='187' y='8' width='26' height='74' rx='13' transform='rotate(300 200 200)'/%3E%3Crect x='191' y='30' width='18' height='52' rx='9' transform='rotate(330 200 200)'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  -webkit-mask: none; mask: none; filter: none;
+  animation: lvl-rays-spin 60s linear infinite;
+}
+@keyframes lvl-rays-spin { to { transform: rotate(360deg); } }
+.lvl-bg.scene-sun .lvl-sun { transform: none; }
+@media (max-width: 560px) { .lvl-sun { width: 220px; height: 220px; top: -70px; left: -30px; } }
+@media (prefers-reduced-motion: reduce) { .lvl-sun::before { animation: none; } }

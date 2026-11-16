@@ -1,7 +1,7 @@
 // Next Up logo: six shapes that morph into N E X T U P, one at a time, left to right.
 // Mounts into every `.logo-hero` element. Plays once per page load (the first time a
 // hero scrolls into view); later heroes and reduced-motion users get the finished word.
-const SW = 11, M = 96, NS = 'http://www.w3.org/2000/svg';
+const SW = 14, M = 96, NS = 'http://www.w3.org/2000/svg';
 
 function arc(cx, cy, r, a0, a1, n) {
   const o = [];

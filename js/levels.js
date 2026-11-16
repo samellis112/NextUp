@@ -24,10 +24,14 @@ const SKY_LIGHT = [
 ];
 const STEP_PX = 320; // how far the nearest specks travel per level
 
-/* Scenes for the last two puzzles of a 5-puzzle round. They override the
-   level colours: puzzle 4 is IN the clouds; puzzle 5 is above them — bright
-   blue sky and the sun up top, the clouds left behind along the bottom. */
+/* Scenes for the last three puzzles of a 5-puzzle round — a climb through
+   the clouds. They override the level colours:
+     below   puzzle 3: clouds gather along the top, you're coming up under them
+     clouds  puzzle 4: you're inside them, clouds all around
+     sun     puzzle 5: above them — bright blue, light from the corner, cloud below
+   The same eight clouds slide down the screen from one scene to the next. */
 const SCENES = {
+  below: ['#3d74bd', '#16305f'],
   clouds: ['#2f66ad', '#86aedb'],
   sun: ['#1479e0', '#6fc0ff'],
 };
@@ -45,7 +49,9 @@ function ensure() {
   root.innerHTML = `
     <div class="lvl-specks"></div>
     <div class="lvl-sun"></div>
-    <div class="lvl-clouds"></div>`;
+    <div class="lvl-clouds">${Array.from({ length: 8 }, (_, i) => `<i class="cloud c${i + 1}"></i>`).join('')}</div>
+    <div class="lvl-deck back"></div>
+    <div class="lvl-deck front"></div>`;
   document.body.prepend(root);
   return root;
 }
@@ -114,18 +120,17 @@ export function levelSlip() {
   paint();
 }
 
-/* 'clouds', 'sun', or null for the plain level sky. */
+/* 'below', 'clouds', 'sun', or null for the plain level sky. */
 export function setScene(name) {
   scene = SCENES[name] ? name : null;
   const el = ensure();
-  el.classList.toggle('scene-clouds', scene === 'clouds');
-  el.classList.toggle('scene-sun', scene === 'sun');
+  for (const name of Object.keys(SCENES)) el.classList.toggle('scene-' + name, scene === name);
   document.body.classList.toggle('sky-scene', !!scene); // keeps directions readable on the bright sky
   paint();
 }
 
 export function hideLevels() {
-  if (root) root.classList.remove('on', 'scene-clouds', 'scene-sun');
+  if (root) root.classList.remove('on', ...Object.keys(SCENES).map(n => 'scene-' + n));
   document.body.classList.remove('sky-scene');
   scene = null;
   level = 0;

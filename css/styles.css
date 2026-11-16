@@ -1629,37 +1629,110 @@ svg { display: block; }
 /* ============================================================
    Sky scenes for puzzles 4 and 5 (js/levels.js setScene)
    ============================================================ */
-/* Soft clouds: a handful of blurred white ellipses. In the "clouds" scene they
-   drift across the middle of the screen, faint, so you're inside them. In the
-   "sun" scene they sink to the bottom and turn solid — you've risen above. */
-.lvl-clouds {
-  position: absolute; left: -5%; right: -5%; top: 18vh; height: 70vh;
-  opacity: 0;
+/* Modern sky — the *suggestion* of cloud, not drawn clouds: big, soft,
+   blurred white billows with no edges, and light pouring in from the top-left
+   corner instead of a sun. Each scene gives every billow a place, so they sink
+   down the screen as you climb: along the top (puzzle 3) → all around you (4)
+   → below you (5). */
+.lvl-clouds { position: absolute; inset: 0; overflow: hidden; }
+.lvl-clouds .cloud {
+  position: absolute; display: block;
+  left: var(--x); top: -40vh; width: var(--w); aspect-ratio: 2 / 1;
+  /* three overlapping soft lobes = one fluffy billow */
   background:
-    radial-gradient(closest-side, #fff 45%, rgba(255,255,255,0)) 4% 30% / 34% 46% no-repeat,
-    radial-gradient(closest-side, #fff 45%, rgba(255,255,255,0)) 30% 62% / 40% 52% no-repeat,
-    radial-gradient(closest-side, #fff 45%, rgba(255,255,255,0)) 62% 26% / 36% 44% no-repeat,
-    radial-gradient(closest-side, #fff 45%, rgba(255,255,255,0)) 96% 58% / 38% 50% no-repeat,
-    radial-gradient(closest-side, #fff 45%, rgba(255,255,255,0)) 16% 92% / 44% 46% no-repeat,
-    radial-gradient(closest-side, #fff 45%, rgba(255,255,255,0)) 78% 96% / 46% 44% no-repeat,
-    radial-gradient(closest-side, #fff 45%, rgba(255,255,255,0)) 50% 100% / 50% 40% no-repeat;
-  transition: top 1.6s cubic-bezier(.16, .84, .3, 1), opacity 1.2s ease;
+    radial-gradient(closest-side, rgba(255,255,255,0.95), rgba(255,255,255,0.5) 55%, rgba(255,255,255,0)) 12% 70% / 56% 70% no-repeat,
+    radial-gradient(closest-side, rgba(255,255,255,1),    rgba(255,255,255,0.6) 55%, rgba(255,255,255,0)) 52% 30% / 62% 86% no-repeat,
+    radial-gradient(closest-side, rgba(255,255,255,0.9),  rgba(255,255,255,0.45) 55%, rgba(255,255,255,0)) 90% 68% / 50% 64% no-repeat;
+  filter: blur(10px);
+  opacity: 0;
+  transition: top 1.8s cubic-bezier(.16, .84, .3, 1), left 1.8s cubic-bezier(.16, .84, .3, 1),
+              width 1.8s cubic-bezier(.16, .84, .3, 1), opacity 1.2s ease;
+  animation: lvl-drift 18s ease-in-out infinite alternate;
 }
-.lvl-bg.scene-clouds .lvl-clouds { opacity: 0.38; animation: lvl-drift 14s ease-in-out infinite alternate; }
-.lvl-bg.scene-sun .lvl-clouds { top: 62vh; opacity: 0.96; animation: lvl-drift 18s ease-in-out infinite alternate; }
-@keyframes lvl-drift { from { transform: translateX(-2%); } to { transform: translateX(2%); } }
+.lvl-clouds .c6, .lvl-clouds .c7, .lvl-clouds .c8 { animation-duration: 26s; animation-direction: alternate-reverse; }
+@keyframes lvl-drift { from { transform: translateX(-18px); } to { transform: translateX(18px); } }
 
-/* The sun: top-left, half off-screen, with a wide warm glow. */
-.lvl-sun {
-  position: absolute; top: -90px; left: 6%;
-  width: 240px; height: 240px; border-radius: 50%;
-  background: radial-gradient(circle, #fffbe0 0 34%, #ffe066 58%, #ffcf33 100%);
-  box-shadow: 0 0 90px 50px rgba(255, 236, 140, 0.55), 0 0 220px 140px rgba(255, 244, 190, 0.35);
-  opacity: 0; transform: translateY(70px) scale(0.8);
-  transition: opacity 1.4s ease, transform 1.6s cubic-bezier(.16, .84, .3, 1);
+/* Puzzle 3 — clouds hanging along the top; you're coming up underneath. */
+.lvl-bg.scene-below .cloud { opacity: 0.85; }
+.lvl-bg.scene-below .c6 { --x: 6%;   --w: 30vw; top: -5vw; }
+.lvl-bg.scene-below .c7 { --x: 40%;  --w: 28vw; top: -6vw; }
+.lvl-bg.scene-below .c8 { --x: 72%;  --w: 30vw; top: -4vw; }
+.lvl-bg.scene-below .c1 { --x: -9%;  --w: 34vw; top: -9vw; }
+.lvl-bg.scene-below .c2 { --x: 17%;  --w: 30vw; top: -11vw; }
+.lvl-bg.scene-below .c3 { --x: 38%;  --w: 36vw; top: -12vw; }
+.lvl-bg.scene-below .c4 { --x: 64%;  --w: 30vw; top: -11vw; }
+.lvl-bg.scene-below .c5 { --x: 84%;  --w: 32vw; top: -8vw; }
+
+/* Puzzle 4 — inside the clouds: big ones on every side, the middle left clear. */
+.lvl-bg.scene-clouds .cloud { opacity: 0.9; }
+.lvl-bg.scene-clouds .c6 { --x: -6%;  --w: 30vw; top: 22vh; }
+.lvl-bg.scene-clouds .c7 { --x: 78%;  --w: 28vw; top: 56vh; }
+.lvl-bg.scene-clouds .c8 { --x: 34%;  --w: 32vw; top: -9vw; }
+.lvl-bg.scene-clouds .c1 { --x: -16%; --w: 40vw; top: -3vh; }
+.lvl-bg.scene-clouds .c2 { --x: 74%;  --w: 42vw; top: 2vh; }
+.lvl-bg.scene-clouds .c3 { --x: -20%; --w: 42vw; top: 46vh; }
+.lvl-bg.scene-clouds .c4 { --x: 80%;  --w: 40vw; top: 30vh; }
+.lvl-bg.scene-clouds .c5 { --x: 60%;  --w: 44vw; top: 76vh; }
+
+/* Puzzle 5 — above them: a few clouds poke up from the cloud floor. */
+.lvl-bg.scene-sun .cloud { opacity: 1; }
+.lvl-bg.scene-sun .c6 { --x: 8%;   --w: 26vw; top: calc(100vh - 22vw); }
+.lvl-bg.scene-sun .c7 { --x: 46%;  --w: 24vw; top: calc(100vh - 21vw); }
+.lvl-bg.scene-sun .c8 { --x: 76%;  --w: 26vw; top: calc(100vh - 23vw); }
+.lvl-bg.scene-sun .c1 { --x: -8%;  --w: 30vw; top: calc(100vh - 17vw); }
+.lvl-bg.scene-sun .c2 { --x: 24%;  --w: 28vw; top: calc(100vh - 16vw); }
+.lvl-bg.scene-sun .c3 { --x: 56%;  --w: 30vw; top: calc(100vh - 17vw); }
+.lvl-bg.scene-sun .c4 { --x: 82%;  --w: 28vw; top: calc(100vh - 15vw); }
+.lvl-bg.scene-sun .c5 { --x: 38%;  --w: 22vw; top: calc(100vh - 13vw); }
+
+/* The cloud floor: two rows of soft rolling mounds that fade into white. It
+   rises into view from below on puzzle 4 and fills the bottom on puzzle 5. */
+.lvl-deck {
+  position: absolute; left: -60px; right: -60px; bottom: -12px;
+  background-repeat: repeat-x; background-position: left bottom;
+  filter: blur(8px);
+  transform: translateY(115%);
+  transition: transform 1.8s cubic-bezier(.16, .84, .3, 1);
 }
-.lvl-bg.scene-sun .lvl-sun { opacity: 1; transform: none; }
-@media (max-width: 560px) { .lvl-sun { width: 160px; height: 160px; top: -70px; left: -20px; } }
+.lvl-deck.back {
+  height: 30vh; opacity: 0.75;
+  background-image:
+    radial-gradient(ellipse 50% 100% at 50% 100%, rgba(255,255,255,0.95) 35%, rgba(255,255,255,0) 72%),
+    linear-gradient(to top, rgba(255,255,255,0.9) 0, rgba(255,255,255,0) 60%);
+  background-size: 54vw 100%, 100% 100%; background-position: 14vw bottom, left bottom;
+}
+.lvl-deck.front {
+  height: 20vh;
+  background-image:
+    radial-gradient(ellipse 50% 100% at 50% 100%, #fff 38%, rgba(255,255,255,0) 72%),
+    linear-gradient(to top, #fff 0, #fff 28%, rgba(255,255,255,0) 70%);
+  background-size: 38vw 100%, 100% 100%;
+}
+.lvl-bg.scene-clouds .lvl-deck { transform: translateY(55%); }
+.lvl-bg.scene-sun .lvl-deck { transform: none; }
+
+/* Light from the corner: no sun, just a wide warm glow spilling from the
+   top-left with a few very soft shafts that sway slowly. */
+.lvl-sun {
+  position: absolute; top: 0; left: 0;
+  width: 120vmax; height: 120vmax;
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 0.95) 0, rgba(255, 249, 226, 0.8) 12%,
+    rgba(255, 243, 200, 0.42) 30%, rgba(255, 246, 215, 0.14) 50%, rgba(255, 255, 255, 0) 68%);
+  opacity: 0; transform: translate(-50%, -50%) scale(0.7);
+  transition: opacity 1.6s ease, transform 1.8s cubic-bezier(.16, .84, .3, 1);
+}
+.lvl-sun::before { /* soft shafts of light */
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(from 8deg,
+    rgba(255, 255, 255, 0.22) 0deg 7deg, rgba(255, 255, 255, 0) 7deg 22deg);
+  -webkit-mask: radial-gradient(circle, transparent 0 8%, #000 20%, transparent 62%);
+          mask: radial-gradient(circle, transparent 0 8%, #000 20%, transparent 62%);
+  filter: blur(14px);
+  animation: lvl-rays 16s ease-in-out infinite alternate;
+}
+@keyframes lvl-rays { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.lvl-bg.scene-sun .lvl-sun { opacity: 1; transform: translate(-50%, -50%); }
 
 /* On the bright scenes the words above and below the puzzle go white with a
    soft shadow so they stay readable over blue sky and cloud. */
@@ -1669,7 +1742,8 @@ body.sky-scene #screen-round :is(.instruction, .bld-hint, .word-prompt, .msg) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lvl-clouds, .lvl-sun { transition: opacity 0.3s ease; animation: none !important; }
+  .lvl-clouds .cloud, .lvl-sun, .lvl-deck { transition: opacity 0.3s ease; animation: none !important; }
+  .lvl-sun::before { animation: none; }
 }
 
 /* ============================================================
@@ -1773,5 +1847,30 @@ body.sky-scene[data-screen="results"] .site-footer { color: #12305c; }
 body.sky-scene #screen-results .per-problem {
   background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 6px 14px;
 }
-/* On the results screen the sun tucks further into the corner, clear of the heading. */
-body[data-screen="results"] .lvl-bg.scene-sun .lvl-sun { transform: translate(-70px, -50px); }
+
+/* ----- Round timer: above the puzzle, big, counting up ----- */
+#timer.round-timer {
+  display: block; min-width: 0; text-align: center;
+  font-size: clamp(30px, 6vw, 40px); font-weight: 800; letter-spacing: 2px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+/* dark ink with a light halo reads on blue sky AND on white cloud */
+body.sky-scene #screen-round #timer.round-timer { color: #0e2a52; text-shadow: 0 0 6px rgba(255, 255, 255, 0.9), 0 0 2px rgba(255, 255, 255, 0.9); }
+
+/* ----- Home screens: bigger logo, bolder type, everything a notch larger ----- */
+.menu .logo-hero, .logo-hero { width: min(760px, 100%); margin-bottom: 22px; }
+.menu .subtitle { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+.menu .go-btn { max-width: 500px; padding: 32px 24px; border-radius: 22px; }
+.menu .go-btn .go-word { font-size: 56px; font-weight: 800; }
+.menu .go-btn .sub-note { font-size: 16px; font-weight: 500; }
+.menu .leaderboard-big { max-width: 500px; padding: 19px 22px; font-size: 21px; font-weight: 700; }
+.menu .menu-links { margin-top: 22px; gap: 12px; }
+.menu .menu-link { font-size: 17px; font-weight: 500; }
+.menu .menu-divider { font-size: 14px; font-weight: 600; margin-top: 24px; }
+.menu .diff-row button { font-size: 16px; font-weight: 600; padding: 10px 20px; }
+.menu .menu-actions { max-width: 420px; }
+.menu .menu-actions button { font-size: 18px; padding: 16px 24px; }
+.menu .streak-chip { font-size: 16px; }
+.daily-intro .intro-note { font-size: 16px; }

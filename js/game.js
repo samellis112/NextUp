@@ -7,7 +7,7 @@ import { renderPanel, panelEq } from './panels.js';
 import { generateProblem, generateNestedFinale, generateTrial } from './generators.js';
 import { renderBuilder } from './builder.js';
 import { shake, playSound, setStreakHeat, primeAudio, isMuted, setMuted, reducedMotion } from './feel.js';
-import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults, setScene } from './levels.js?v=14';
+import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults, setScene } from './levels.js?v=22';
 import {
   DAILY_GEN_VERSION, DAILY_LENGTH, todayKey, dailyNumber, dailySeed,
   dailyRamp, msUntilTomorrow, formatCountdown, shareText,
@@ -237,8 +237,8 @@ function loadQuestion() {
   const n = totalLength();
 
   ui.problemNum.textContent = game.mode === 'demo' ? 'Try it' : `${game.idx + 1}/${n}`;
-  // Puzzle 4 is in the clouds; puzzle 5 breaks out above them into bright sky.
-  setScene(n === 5 ? (game.idx === 3 ? 'clouds' : game.idx === 4 ? 'sun' : null) : null);
+  // Puzzle 3 comes up under the clouds, 4 is inside them, 5 breaks out above.
+  setScene(n === 5 ? [null, null, 'below', 'clouds', 'sun'][game.idx] : null);
   ui.progress.style.width = (game.idx / n * 100) + '%';
   ui.msg.textContent = '';
   ui.msg.className = 'msg';

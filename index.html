@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300..800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=16">
+<link rel="stylesheet" href="css/styles.css?v=22">
 </head>
 <body>
   <!-- Account widget: fixed top-right, visible on every screen -->
@@ -84,12 +84,12 @@
       <div class="progress-bar round-progress"><div class="progress-fill" id="progress"></div></div>
       <div class="corner-hud" aria-label="Round status">
         <span class="hud-q" id="problemNum">1/5</span>
-        <span class="hud-time" id="timer">0.0s</span>
         <button class="hud-btn" id="btn-mute" aria-label="Toggle sound">🔊</button>
         <button class="hud-btn" id="btn-quit" aria-label="Quit round">✕</button>
       </div>
 
       <div class="panel">
+        <div class="round-timer" id="timer" aria-label="Time">0.0s</div>
         <div class="instruction" id="instruction" hidden></div>
         <div class="sequence" id="sequence"></div>
         <div id="answer-builder"></div>
@@ -152,7 +152,7 @@
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script type="module" src="js/logo.js"></script>
-<script type="module" src="js/game.js?v=16"></script>
+<script type="module" src="js/logo.js?v=18"></script>
+<script type="module" src="js/game.js?v=22"></script>
 </body>
 </html>

@@ -2158,40 +2158,15 @@ body[data-screen="round"] #screen-round.active { justify-content: safe center; }
 }
 
 /* ============================================================
-   Landing sky: a big gradient, light at the top → night at the bottom.
-   Shown on the home screens only; on Play it slides down out of view.
+   Home screens sit on the plain page background (solid white in light
+   mode). The landing sky gradient is switched off; on Play the page
+   content still drops away before the round starts.
    ============================================================ */
-.home-sky {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(ellipse 120% 55% at 50% -8%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 70%),
-    linear-gradient(to bottom, #a9d4ff 0%, #5f9de6 18%, #2b62b0 38%, #163a73 60%, #0d1f3d 80%, #0b1424 100%);
-  opacity: 0;
-  transition: opacity 0.5s ease, transform 0.7s cubic-bezier(.55, 0, .3, 1);
-}
-body[data-screen="menu"] .home-sky,
-body[data-screen="daily-intro"] .home-sky { opacity: 1; }
-body.sky-leaving .home-sky { transform: translateY(100%); }
+.home-sky { display: none; }
 body.sky-leaving .screen.active { opacity: 0; transform: translateY(40px); transition: opacity 0.45s ease, transform 0.6s ease; }
 @media (prefers-reduced-motion: reduce) {
-  .home-sky, body.sky-leaving .screen.active { transition: opacity 0.2s ease; }
+  body.sky-leaving .screen.active { transition: opacity 0.2s ease; }
 }
-
-/* Keep the home-screen text readable on the bright top of the sky */
-body[data-screen="menu"] .menu .subtitle,
-body[data-screen="daily-intro"] .menu .subtitle { color: #fff; text-shadow: 0 1px 3px rgba(5, 20, 50, 0.5); }
-body[data-screen="menu"] .site-footer a,
-body[data-screen="daily-intro"] .site-footer a { color: #c9d6ea; }
-/* Logo on the light sky: deeper colours + a soft shadow so every letter reads */
-body[data-screen="menu"], body[data-screen="daily-intro"] { --mark-blue: #0a3f8f; --mark-grey: #0e1a2e; }
-body[data-screen="menu"] .logo-hero svg,
-body[data-screen="daily-intro"] .logo-hero svg { filter: drop-shadow(0 2px 6px rgba(5, 25, 60, 0.35)); }
-
-/* No sweep back up: the slide only animates on the way down; once the round
-   starts the sky is hidden instantly, and it only fades back in on a home screen. */
-.home-sky { transition: opacity 0.5s ease; }
-body.sky-leaving .home-sky { transition: transform 0.7s cubic-bezier(.55, 0, .3, 1); }
-body:not([data-screen="menu"]):not([data-screen="daily-intro"]) .home-sky { opacity: 0; transition: none; }
 
 /* Title stands out: a dark shadow under the letters plus a faint light rim */
 body[data-screen="menu"] .logo-hero svg,

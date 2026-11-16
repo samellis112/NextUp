@@ -127,14 +127,14 @@ function trayFor(spec) {
       </div>`;
   }
   if (spec.kind === 'dots') {
-    return `<div class="bld-hint">Tap inside the answer box to add or remove a dot.</div>`;
+    return `<div class="bld-hint">Tap to add or remove dots.</div>`;
   }
   if (spec.kind === 'nested') {
     const legend = spec.states.map((s, k) =>
       `<button type="button" class="bld-legend-chip" data-state="${k}" aria-label="Fill ${k + 1}">${textureSwatchSvg(s.texture || null, s.color || null, 38)}</button>`).join('');
     return `
       <div class="bld-tray-head">
-        <span class="bld-hint">Drag a fill into a section of the answer — or tap a fill, then a section.</span>
+        <span class="bld-hint">Tap a fill, then a section.</span>
         <button type="button" class="bld-clear" data-clear="1">Clear all</button>
       </div>
       <div class="bld-legend" aria-label="Available fills — drag onto a section">${legend}</div>`;
@@ -147,19 +147,17 @@ function trayFor(spec) {
       </div>`;
   }
   if (spec.kind === 'week' || spec.kind === 'pickday') {
-    return `<div class="bld-hint">${spec.kind === 'pickday'
-      ? 'Tap the one day in the answer row that fits every rule.'
-      : 'Tap the days in the answer row to mark them.'}</div>`;
+    return `<div class="bld-hint">${spec.kind === 'pickday' ? 'Tap one day.' : 'Tap the days.'}</div>`;
   }
   if (spec.kind === 'month') {
     return `
       <div class="bld-tray-head">
-        <span class="bld-hint">Tap every day on the calendar that fits all the requirements.</span>
+        <span class="bld-hint">Tap the days.</span>
         <button type="button" class="bld-clear" data-clear="1">Clear all</button>
       </div>`;
   }
   if (spec.kind === 'bars') {
-    return `<div class="bld-hint">Drag each bar up or down to set its value.</div>`;
+    return `<div class="bld-hint">Drag the bars.</div>`;
   }
   return '';
 }

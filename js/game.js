@@ -7,20 +7,21 @@ import { renderPanel, panelEq } from './panels.js';
 import { generateProblem, generateNestedFinale, generateTrial } from './generators.js';
 import { renderBuilder } from './builder.js';
 import { shake, playSound, setStreakHeat, primeAudio, isMuted, setMuted, reducedMotion } from './feel.js';
-import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults } from './levels.js?v=12';
+import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults, setScene } from './levels.js?v=14';
 import {
   DAILY_GEN_VERSION, DAILY_LENGTH, todayKey, dailyNumber, dailySeed,
   dailyRamp, msUntilTomorrow, formatCountdown, shareText,
 } from './daily.js';
 import {
   loadHistory, saveHistoryEntry, getDailyResult, saveDailyResult,
-  computeStreaks, loadDaily, getPendingJoin, getFlag, setFlag,
+  computeStreaks, loadDaily, getPendingJoin, getFlag, setFlag, getGuest,
 } from './storage.js';
 import { esc, registerScreens, showScreen, activeScreen, openModal, closeModal } from './ui.js';
 import {
   currentUser, initAuth, capturePendingInvite, resolvePendingInvite,
   showInviteLanding, openLeaderboard, postScore,
-  signInWithGoogle, googleButtonHtml, requireAccount, potentialDailyRank, postFeedback,
+  signInWithGoogle, googleButtonHtml, requireAccount, postFeedback,
+  postGuestScore, renderTodayBoard,
 } from './social.js';
 
 const PRACTICE_LENGTH = 5;
@@ -122,7 +123,7 @@ function startDemo() {
   closeModal();
   const R = rngHelpers(makeRng(null));
   const q = generateProblem(R, R.pick(['easy', 'medium']));
-  if (!q.instruction) q.instruction = 'What comes next? Fill in the “?”. You get 3 tries.';
+  if (!q.instruction) q.instruction = 'What comes next?';
   game = {
     mode: 'demo',
     questions: [q],
@@ -236,6 +237,8 @@ function loadQuestion() {
   const n = totalLength();
 
   ui.problemNum.textContent = game.mode === 'demo' ? 'Try it' : `${game.idx + 1}/${n}`;
+  // Puzzle 4 is in the clouds; puzzle 5 breaks out above them into bright sky.
+  setScene(n === 5 ? (game.idx === 3 ? 'clouds' : game.idx === 4 ? 'sun' : null) : null);
   ui.progress.style.width = (game.idx / n * 100) + '%';
   ui.msg.textContent = '';
   ui.msg.className = 'msg';
@@ -326,8 +329,10 @@ function loadQuestion() {
   // puzzles carry none (the frames + "?" + → say it all).
   const instr = document.getElementById('instruction');
   instr.hidden = !q.instruction;
-  // Numbered requirements (①②③) each get their own line so they're easy to scan.
-  instr.innerHTML = esc(q.instruction || '').replace(/ (?=[①②③])/g, '<br>');
+  // Big headline, then any numbered requirements (①②③) one per line.
+  const [head, ...items] = (q.instruction || '').split(/\s*(?=[①②③])/);
+  instr.innerHTML = `<div class="instr-head">${esc(head)}</div>`
+    + items.map(t => `<div class="instr-item">${esc(t)}</div>`).join('');
 
   if (isMC) {
     renderChoices(q);
@@ -493,7 +498,6 @@ function finishRound() {
     const r = game.results[0], q = game.questions[0];
     game = null;
     setStreakHeat(0);
-    hideLevels();
     playSound('round');
     showDemoResult(r, q);
     return;
@@ -504,7 +508,8 @@ function finishRound() {
   const attempts = totalAttempts(results);
   playSound('round');
   setStreakHeat(0);
-  hideLevels();
+  // The background stays as it was on the last puzzle for the results screen;
+  // it clears when the player goes back to the menu (see 'nextup:screen').
 
   if (game.mode === 'daily') {
     const entry = {
@@ -521,11 +526,12 @@ function finishRound() {
     saveDailyResult(todayKey(), entry);
     clearDailyProgress();
     postScore({ difficulty: 'daily', avgMs: totalMs / DAILY_LENGTH, accuracy: solved / DAILY_LENGTH,
-      attempts, dayKey: todayKey(),
+      attempts, dayKey: todayKey(), triesGrid: entry.triesGrid.join(','),
       local: { kind: 'daily', key: todayKey() } });
     game = null;
     renderMenu();
     showDailyResults(entry);
+    if (!currentUser) openJoinBoard(entry); // signed-out finishers are invited onto the board
   } else {
     // Practice is personal training: saved locally, never posted to leaderboards.
     const entry = {
@@ -590,33 +596,38 @@ function showDailyResults(entry) {
   const perfect = entry.score === entry.total && attempts === entry.total;
   const secs = Math.round(entry.timeMs / 1000);
   const container = document.getElementById('results-body');
+  // Score on the left, today's leaderboard on the right (stacked on phones,
+  // where the board sits just below Share).
   container.innerHTML = `
-    <h2>${perfect ? 'Perfect!' : entry.score >= 3 ? 'Nice work!' : 'Round Complete'}</h2>
-    <div class="big" id="results-big">${entry.score}/${entry.total}</div>
-    <div class="big-label">Solved — Daily Challenge #${entry.number}</div>
-    <div class="share-grid" aria-label="result grid: try each puzzle was solved on">${triesHtml(triesGridOf(entry))}</div>
+    <div class="results-split">
+      <div class="results-left">
+        <h2>${perfect ? 'Perfect!' : entry.score >= 3 ? 'Nice work!' : 'Round Complete'}</h2>
+        <div class="big" id="results-big">${entry.score}/${entry.total}</div>
+        <div class="big-label">Daily #${entry.number}</div>
+        <div class="share-grid" aria-label="result grid: try each puzzle was solved on">${triesHtml(triesGridOf(entry))}</div>
 
-    <div class="results-grid">
-      <div class="result-stat"><div class="val">${attempts}</div><div class="lbl">Attempts</div></div>
-      <div class="result-stat"><div class="val">${secs}s</div><div class="lbl">Total Time</div></div>
-      <div class="result-stat"><div class="val">🔥 ${streaks.current}</div><div class="lbl">Day Streak</div></div>
-    </div>
+        <div class="results-grid">
+          <div class="result-stat"><div class="val">${attempts}</div><div class="lbl">Attempts</div></div>
+          <div class="result-stat"><div class="val">${secs}s</div><div class="lbl">Time</div></div>
+          <div class="result-stat"><div class="val">🔥 ${streaks.current}</div><div class="lbl">Streak</div></div>
+        </div>
 
-    ${currentUser ? '' : `
-      <div class="signin-upsell">
-        <span id="results-rank-msg">Sign in to put your score on today's leaderboard.</span>
-        <br><button class="btn-google" id="btn-results-signin">${googleButtonHtml('Sign in with Google')}</button>
-      </div>`}
+        <div class="results-cta">
+          <button class="share-big" id="btn-share">Share your result</button>
+        </div>
+        <div class="countdown-note">Next puzzle in <b id="countdown">--:--:--</b></div>
+        <div class="results-actions">
+          <button class="back-link" id="btn-results-stats">My Stats</button>
+          <button class="back-link" id="btn-results-menu2">Main Menu</button>
+        </div>
+      </div>
 
-    <div class="countdown-note">Next puzzle in <b id="countdown">--:--:--</b></div>
-
-    <div class="results-cta">
-      <button class="share-big" id="btn-share">Share your result</button>
-      <button class="leaderboard-big" id="btn-results-leaderboard">🏆 See the leaderboard</button>
-    </div>
-    <div class="results-actions">
-      <button class="back-link" id="btn-results-stats">My Stats</button>
-      <button class="back-link" id="btn-results-menu2">Main Menu</button>
+      <div class="results-right">
+        <h3>🏆 Today's leaderboard</h3>
+        <button class="leaderboard-big" id="btn-results-join" hidden>Get on the leaderboard</button>
+        <div id="results-board"></div>
+        <button class="back-link" id="btn-results-leaderboard">Full leaderboard</button>
+      </div>
     </div>`;
   showScreen('results');
   countUp(document.getElementById('results-big'), entry.score, `/${entry.total}`);
@@ -625,22 +636,64 @@ function showDailyResults(entry) {
   document.getElementById('btn-results-leaderboard').addEventListener('click', () => { stopCountdown(); openLeaderboard(); });
   document.getElementById('btn-results-stats').addEventListener('click', openStats);
   document.getElementById('btn-results-menu2').addEventListener('click', () => { renderMenu(); showScreen('menu'); });
-  const signinBtn = document.getElementById('btn-results-signin');
-  if (signinBtn) signinBtn.addEventListener('click', signInWithGoogle);
-  if (!currentUser) showPotentialRank(entry, attempts);
+  document.getElementById('btn-results-join').addEventListener('click', () => openJoinBoard(entry));
+  refreshResultsBoard();
 
   startCountdown();
 }
 
-/* Signed-out upsell: look up where this result would rank today and swap in
-   that message. Keeps the generic copy if the board can't be reached. */
-async function showPotentialRank(entry, attempts) {
-  const result = await potentialDailyRank({
-    solved: entry.score, attempts, avgMs: entry.timeMs / entry.total,
+/* (Re)load the board on the results screen and show the "Get on the
+   leaderboard" button only to players who aren't on it yet. */
+function refreshResultsBoard() {
+  const board = document.getElementById('results-board');
+  if (!board) return;
+  const saved = getDailyResult(todayKey());
+  const join = document.getElementById('btn-results-join');
+  if (join) join.hidden = !!currentUser || !!(saved && saved.posted);
+  renderTodayBoard(board, 15);
+}
+
+/* "Get on the leaderboard": sign in with Google, or just type a guest name. */
+function openJoinBoard(entry) {
+  const saved = getDailyResult(todayKey());
+  if (currentUser || (saved && saved.posted)) return;
+  openModal(`
+    <h3>Get on the leaderboard</h3>
+    <div class="modal-actions">
+      <button class="btn-google" id="modal-join-google">${googleButtonHtml('Sign in with Google')}</button>
+    </div>
+    <div class="join-or">or</div>
+    <form class="join-guest" id="join-guest-form">
+      <input type="text" id="join-guest-name" maxlength="24" autocomplete="nickname"
+        placeholder="Put in a guest name" aria-label="Guest name" value="${esc(getGuest().name || '')}">
+      <button type="submit" class="primary" id="join-guest-go">Join</button>
+    </form>
+    <div class="join-status" id="join-status" aria-live="polite"></div>
+    <div class="modal-actions">
+      <button id="modal-join-skip">Not now</button>
+    </div>`, 'join-box');
+  document.getElementById('modal-join-google').addEventListener('click', signInWithGoogle);
+  document.getElementById('modal-join-skip').addEventListener('click', closeModal);
+  const form = document.getElementById('join-guest-form');
+  const status = document.getElementById('join-status');
+  const go = document.getElementById('join-guest-go');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    go.disabled = true;
+    status.textContent = 'Saving…';
+    const res = await postGuestScore({
+      name: document.getElementById('join-guest-name').value,
+      avgMs: entry.timeMs / entry.total,
+      accuracy: entry.score / entry.total,
+      attempts: attemptsOf(entry),
+      dayKey: todayKey(),
+      triesGrid: triesGridOf(entry).join(','),
+    });
+    if (!res.ok) { status.textContent = res.message; go.disabled = false; return; }
+    closeModal();
+    renderMenu();
+    refreshResultsBoard();
   });
-  const el = document.getElementById('results-rank-msg');
-  if (!result || !el) return;
-  el.innerHTML = `You'd be <b>#${result.rank}</b> on today's leaderboard — sign in to claim your spot.`;
 }
 
 async function shareDaily(entry, streak) {
@@ -863,11 +916,11 @@ function renderMenu() {
   const progress = loadDailyProgress();
   const note = document.getElementById('go-note');
   if (played) {
-    note.innerHTML = `Daily #${n} done ${triesHtml(triesGridOf(played))} — view results`;
+    note.innerHTML = `Done ${triesHtml(triesGridOf(played))} · see results`;
   } else if (progress) {
-    note.textContent = `Resume Daily #${n} — question ${progress.results.length + 1} of ${DAILY_LENGTH}`;
+    note.textContent = `Resume · puzzle ${progress.results.length + 1} of ${DAILY_LENGTH}`;
   } else {
-    note.textContent = `Daily #${n} · 5 puzzles · same for everyone`;
+    note.textContent = `Daily #${n}`;
   }
 
   const streaks = computeStreaks(todayKey());
@@ -884,15 +937,20 @@ function renderMenu() {
 
 registerScreens(['invite', 'daily-intro', 'menu', 'round', 'results', 'history', 'leaderboard', 'stats']);
 
+/* The round's final background carries onto the results screen and is put
+   away once the player returns to a home screen. */
+document.addEventListener('nextup:screen', e => {
+  if (e.detail === 'menu' || e.detail === 'daily-intro') hideLevels();
+});
+
 /* Daily intro: the pre-round screen with the START button. The timer (and the
    round itself) only begins when START is pressed. */
 function showDailyIntro() {
   const n = dailyNumber();
   const progress = loadDailyProgress();
-  document.getElementById('intro-title').textContent = `Daily Challenge #${n}`;
+  document.getElementById('intro-title').textContent = `Daily #${n}`;
   document.getElementById('intro-sub').textContent = progress
-    ? `Resume — question ${progress.results.length + 1} of ${DAILY_LENGTH}`
-    : '5 puzzles · 3 tries each · the same for everyone';
+    ? `Resume · puzzle ${progress.results.length + 1} of ${DAILY_LENGTH}` : '';
   showScreen('daily-intro');
 }
 

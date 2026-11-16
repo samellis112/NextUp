@@ -100,6 +100,7 @@ export function getUnpostedScores(todayKey) {
       avgMs: daily.timeMs / daily.total,
       accuracy: daily.score / daily.total,
       attempts: daily.attempts ?? null,
+      triesGrid: Array.isArray(daily.triesGrid) ? daily.triesGrid.join(',') : null,
       dayKey: todayKey,
     });
   }
@@ -151,4 +152,27 @@ export function setPendingJoin(code) { write(PENDING_JOIN_KEY, code); }
 export function clearPendingJoin() {
   mem.delete(PENDING_JOIN_KEY);
   try { localStorage.removeItem(PENDING_JOIN_KEY); } catch { /* ignore */ }
+}
+
+/* ---------- Guest identity (leaderboard without an account) ----------
+   A random id kept in this browser plus the name the player typed. The id is
+   what marks a guest row as "you" and limits a browser to one row per day. */
+
+const GUEST_KEY = 'nextup-guest-v1';
+
+export function getGuest() {
+  let g = read(GUEST_KEY);
+  if (!g || !g.id) {
+    const id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+    g = { id, name: '' };
+    write(GUEST_KEY, g);
+  }
+  return g;
+}
+
+export function setGuestName(name) {
+  const g = getGuest();
+  g.name = name;
+  write(GUEST_KEY, g);
 }

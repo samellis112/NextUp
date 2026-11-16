@@ -24,6 +24,15 @@ const SKY_LIGHT = [
 ];
 const STEP_PX = 320; // how far the nearest specks travel per level
 
+/* Scenes for the last two puzzles of a 5-puzzle round. They override the
+   level colours: puzzle 4 is IN the clouds; puzzle 5 is above them — bright
+   blue sky and the sun up top, the clouds left behind along the bottom. */
+const SCENES = {
+  clouds: ['#2f66ad', '#86aedb'],
+  sun: ['#1479e0', '#6fc0ff'],
+};
+let scene = null;
+
 let root = null;
 let level = 0;
 let travel = 0; // total scroll in px; grows as you climb
@@ -33,7 +42,10 @@ function ensure() {
   root = document.createElement('div');
   root.className = 'lvl-bg';
   root.setAttribute('aria-hidden', 'true');
-  root.innerHTML = `<div class="lvl-specks"></div>`;
+  root.innerHTML = `
+    <div class="lvl-specks"></div>
+    <div class="lvl-sun"></div>
+    <div class="lvl-clouds"></div>`;
   document.body.prepend(root);
   return root;
 }
@@ -41,7 +53,7 @@ function ensure() {
 function paint() {
   const el = ensure();
   const light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-  const [top, bot] = (light ? SKY_LIGHT : SKY_DARK)[level];
+  const [top, bot] = scene ? SCENES[scene] : (light ? SKY_LIGHT : SKY_DARK)[level];
   el.style.setProperty('--sky-top', top);
   el.style.setProperty('--sky-bot', bot);
   if (reducedMotion()) return;
@@ -102,8 +114,20 @@ export function levelSlip() {
   paint();
 }
 
+/* 'clouds', 'sun', or null for the plain level sky. */
+export function setScene(name) {
+  scene = SCENES[name] ? name : null;
+  const el = ensure();
+  el.classList.toggle('scene-clouds', scene === 'clouds');
+  el.classList.toggle('scene-sun', scene === 'sun');
+  document.body.classList.toggle('sky-scene', !!scene); // keeps directions readable on the bright sky
+  paint();
+}
+
 export function hideLevels() {
-  if (root) root.classList.remove('on');
+  if (root) root.classList.remove('on', 'scene-clouds', 'scene-sun');
+  document.body.classList.remove('sky-scene');
+  scene = null;
   level = 0;
   travel = 0;
 }

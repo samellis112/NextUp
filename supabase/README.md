@@ -3,6 +3,14 @@
 SQL files here are applied manually in the Supabase dashboard — nothing in the
 app runs them.
 
+## guest-leaderboard-migration.sql
+
+Lets signed-out players join the daily board under a typed guest name
+(`postGuestScore` in [js/social.js](../js/social.js)) and stores the try each
+puzzle was solved on (`tries_grid`, shown as "1 1 2 ✕ 1"). Paste the whole file
+into the SQL editor and click **Run**. Until then guest names fail to save and
+the board shows "4/5" instead of the per-puzzle tries.
+
 ## feedback-migration.sql
 
 Creates the `feedback` table for the two 1–5 ratings asked after a "Try the

@@ -4,7 +4,7 @@
 
 import { esc, openModal, closeModal, alertModal, showScreen } from './ui.js';
 import { wasWelcomed, markWelcomed, getPendingJoin, setPendingJoin, clearPendingJoin,
-  getUnpostedScores, markScorePosted } from './storage.js';
+  getUnpostedScores, markScorePosted, getGuest, setGuestName } from './storage.js';
 import { todayKey } from './daily.js';
 
 const SUPABASE_URL = 'https://lfbsratbyfgjufjpqfvi.supabase.co';
@@ -122,9 +122,9 @@ export function requireAccount(featureName) {
 
 /* `local` (optional) is a { kind, key } handle to the saved local result, so a
    successful insert marks it posted and a later backfill won't re-submit it. */
-export function postScore({ difficulty, avgMs, accuracy, attempts, dayKey, local }) {
-  if (!currentUser) return Promise.resolve();
-  return sb.from('scores').insert({
+export async function postScore({ difficulty, avgMs, accuracy, attempts, dayKey, triesGrid, local }) {
+  if (!currentUser) return;
+  const row = {
     user_id: currentUser.id,
     display_name: currentUser.name,
     difficulty,
@@ -132,10 +132,47 @@ export function postScore({ difficulty, avgMs, accuracy, attempts, dayKey, local
     accuracy,
     attempts: attempts ?? null,
     day_key: dayKey ?? null,
-  }).then(({ error }) => {
-    if (error) { console.error('Leaderboard insert failed:', error.message); return; }
-    if (local) markScorePosted(local.kind, local.key);
-  });
+  };
+  // tries_grid arrives with guest-leaderboard-migration.sql; if the column
+  // isn't there yet, post without it rather than losing the score.
+  let { error } = await sb.from('scores').insert(triesGrid ? { ...row, tries_grid: triesGrid } : row);
+  if (error && triesGrid && /tries_grid/.test(error.message || '')) {
+    ({ error } = await sb.from('scores').insert(row));
+  }
+  if (error) { console.error('Leaderboard insert failed:', error.message); return; }
+  if (local) markScorePosted(local.kind, local.key);
+}
+
+/* A signed-out player joins today's board under a typed name. Needs
+   supabase/guest-leaderboard-migration.sql. Resolves to { ok, message }. */
+export async function postGuestScore({ name, avgMs, accuracy, attempts, dayKey, triesGrid }) {
+  const clean = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 24);
+  if (!clean) return { ok: false, message: 'Type a name first.' };
+  const guest = getGuest();
+  try {
+    const { error } = await sb.from('scores').insert({
+      user_id: null,
+      guest_id: guest.id,
+      display_name: clean,
+      difficulty: 'daily',
+      avg_solve_ms: Math.round(avgMs),
+      accuracy,
+      attempts: attempts ?? null,
+      day_key: dayKey,
+      tries_grid: triesGrid ?? null,
+    });
+    // 23505 = this browser already has a row today — treat as done.
+    if (error && error.code !== '23505') {
+      console.error('Guest leaderboard insert failed:', error.message);
+      return { ok: false, message: 'Couldn’t save that — please try again.' };
+    }
+  } catch (e) {
+    console.error('Guest leaderboard insert failed:', e);
+    return { ok: false, message: 'Couldn’t save that — please try again.' };
+  }
+  setGuestName(clean);
+  markScorePosted('daily', dayKey);
+  return { ok: true };
 }
 
 /* Ratings from the "Try the game" result screen. Works signed out (anon key);
@@ -173,7 +210,7 @@ export async function backfillScores() {
     for (const p of getUnpostedScores(todayKey())) {
       await postScore({
         difficulty: p.difficulty, avgMs: p.avgMs, accuracy: p.accuracy,
-        attempts: p.attempts, dayKey: p.dayKey,
+        attempts: p.attempts, dayKey: p.dayKey, triesGrid: p.triesGrid,
         local: { kind: p.kind, key: p.key },
       });
     }
@@ -195,9 +232,10 @@ const LEADERBOARD_TABS = [
 
 let activeLeaderboardTab = 'daily';
 
+/* The daily board is open to everyone; only friend groups need an account. */
 export async function openLeaderboard(tab) {
-  if (!requireAccount('the leaderboard')) return;
-  if (tab) activeLeaderboardTab = tab;
+  if (typeof tab === 'string') activeLeaderboardTab = tab;
+  if (!currentUser) activeLeaderboardTab = 'daily';
   showScreen('leaderboard');
   renderLeaderboardTabs();
   loadLeaderboardTab(activeLeaderboardTab);
@@ -213,6 +251,7 @@ function renderLeaderboardTabs() {
     btn.addEventListener('click', () => {
       const key = btn.dataset.tab;
       if (key === activeLeaderboardTab) return;
+      if (key === 'groups' && !requireAccount('friend groups')) return;
       activeLeaderboardTab = key;
       renderLeaderboardTabs();
       loadLeaderboardTab(key);
@@ -220,17 +259,33 @@ function renderLeaderboardTabs() {
   });
 }
 
-/* Rank: most solved, then fewest total attempts, then fastest total time. */
-function dailyBoardQuery() {
+/* Rank: most solved, then fewest total attempts, then fastest total time —
+   so anyone who got all five on the first try is at the top, fastest first. */
+function dailyBoardSelect(cols) {
   return sb
     .from('scores')
-    .select('user_id, display_name, avg_solve_ms, accuracy, attempts')
+    .select(cols)
     .eq('difficulty', 'daily')
     .eq('day_key', todayKey())
     .order('accuracy', { ascending: false })
     .order('attempts', { ascending: true, nullsFirst: false })
     .order('avg_solve_ms', { ascending: true })
     .limit(500);
+}
+async function dailyBoardQuery() {
+  const base = 'user_id, display_name, avg_solve_ms, accuracy, attempts';
+  const res = await dailyBoardSelect(base + ', tries_grid, guest_id');
+  // Before guest-leaderboard-migration.sql is applied those columns don't exist.
+  return res.error ? dailyBoardSelect(base) : res;
+}
+
+/* Today's board, one best row per player — for the results screen. */
+export async function renderTodayBoard(container, limit = 50) {
+  container.innerHTML = `<div class="history-empty">Loading…</div>`;
+  const { data, error } = await dailyBoardQuery();
+  if (!document.body.contains(container)) return;
+  renderDailyBoard(container, data ? dedupBestPerUser(data).slice(0, limit) : null, error,
+    'No scores yet today — be the first!');
 }
 
 async function loadLeaderboardTab(key) {
@@ -243,7 +298,7 @@ async function loadLeaderboardTab(key) {
     return;
   }
 
-  if (subtitle) subtitle.textContent = "Today's daily challenge — most solved, then fewest attempts, then fastest time.";
+  if (subtitle) subtitle.textContent = "Today's daily — fewest tries first, then fastest time.";
   container.innerHTML = `<div class="history-empty">Loading…</div>`;
   const { data, error } = await dailyBoardQuery();
   if (activeLeaderboardTab !== key) return; // user switched tabs mid-load
@@ -259,7 +314,7 @@ export async function potentialDailyRank({ solved, attempts, avgMs }) {
   const { data, error } = await dailyBoardQuery();
   if (error || !data) return null;
   const seen = new Set();
-  const best = data.filter(r => !seen.has(r.user_id) && seen.add(r.user_id));
+  const best = data.filter((r, i) => { const k = playerKey(r, i); return !seen.has(k) && seen.add(k); });
   const myMs = Math.round(avgMs);
   const ahead = best.filter(r => {
     const s = Math.round((r.accuracy || 0) * 5);
@@ -271,9 +326,11 @@ export async function potentialDailyRank({ solved, attempts, avgMs }) {
   return { rank: ahead + 1 };
 }
 
+/* One row per player: accounts by user id, guests by their browser id. */
+const playerKey = (r, i) => r.user_id || (r.guest_id ? 'g:' + r.guest_id : 'row:' + i);
 function dedupBestPerUser(rows) {
   const seen = new Set();
-  return rows.filter(r => !seen.has(r.user_id) && seen.add(r.user_id)).slice(0, 50);
+  return rows.filter((r, i) => { const k = playerKey(r, i); return !seen.has(k) && seen.add(k); }).slice(0, 50);
 }
 
 function fmtTotalTime(avgMs) {
@@ -281,6 +338,16 @@ function fmtTotalTime(avgMs) {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return m ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
+}
+
+/* "1 1 2 ✕ 1" — the try each puzzle was solved on. Older rows that predate
+   tries_grid fall back to "4/5". */
+function triesCells(r) {
+  if (r.tries_grid && /^[123x](,[123x]){4}$/.test(r.tries_grid)) {
+    return r.tries_grid.split(',').map(t =>
+      `<span class="lb-try ${t === 'x' ? 'miss' : 't' + t}">${t === 'x' ? '✕' : t}</span>`).join('');
+  }
+  return `<span class="lb-solved">${Math.round((r.accuracy || 0) * 5)}/5</span>`;
 }
 
 function renderDailyBoard(container, rows, error, emptyMessage) {
@@ -292,26 +359,24 @@ function renderDailyBoard(container, rows, error, emptyMessage) {
     container.innerHTML = `<div class="history-empty">${esc(emptyMessage)}</div>`;
     return;
   }
+  const myGuest = getGuest().id;
   const body = rows.map((r, i) => {
-    const mine = currentUser && r.user_id === currentUser.id;
-    const solved = Math.round((r.accuracy || 0) * 5);
+    const mine = (currentUser && r.user_id === currentUser.id) || (r.guest_id && r.guest_id === myGuest);
     return `
-      <div class="history-row lb-attempts${mine ? ' me' : ''}">
-        <div class="rank">${i + 1}</div>
-        <div class="who-name">${esc(r.display_name)}${mine ? ' <span class="you">you</span>' : ''}</div>
-        <div class="num">${solved}/5</div>
-        <div class="num">${r.attempts != null ? r.attempts : '—'}</div>
-        <div class="avg">${fmtTotalTime(r.avg_solve_ms)}</div>
+      <div class="lb-row${mine ? ' me' : ''}">
+        <div class="lb-rank">${i + 1}</div>
+        <div class="lb-name">${esc(r.display_name)}${mine ? ' <span class="you">you</span>' : ''}</div>
+        <div class="lb-tries">${triesCells(r)}</div>
+        <div class="lb-time">${fmtTotalTime(r.avg_solve_ms)}</div>
       </div>`;
   }).join('');
   container.innerHTML = `
-    <div class="history-list">
-      <div class="history-row head lb-attempts">
-        <div class="rank">#</div>
-        <div>Player</div>
-        <div>Solved</div>
-        <div>Attempts</div>
-        <div>Time</div>
+    <div class="lb-list">
+      <div class="lb-row head">
+        <div class="lb-rank">#</div>
+        <div class="lb-name">Name</div>
+        <div class="lb-tries">Puzzles</div>
+        <div class="lb-time">Time</div>
       </div>
       ${body}
     </div>`;

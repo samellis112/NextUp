@@ -298,7 +298,7 @@ function genMatrixOverlay(R, level) {
   return {
     type: 'matrix', family: 'combine', frames, next,
     rule: 'Each row: the first two cells laid together make the third (every dot from both).',
-    instruction: 'A + B = C — place every dot from the two highlighted cells.',
+    instruction: 'A + B = ?',
     answerSpec: { kind: 'dots', dotToken, grid3: true, cellPositions: positions.slice() },
   };
 }
@@ -323,7 +323,7 @@ function genMatrixSum(R, level) {
     frames: [], next: { text: String(answer) },
     grid, rowSums, colSums, blank: { r: br, c: bc },
     rule: `Row ${br + 1} adds to ${rowSums[br]} and column ${bc + 1} adds to ${colSums[bc]}, so the missing number is ${answer}.`,
-    instruction: 'Fill the blank so its highlighted row and column each add up to the totals shown.',
+    instruction: 'Make the row and column add up.',
     answerSpec: { kind: 'number', maxLen: 2 },
   };
 }
@@ -395,20 +395,20 @@ function genMonthReqs(R, level) {
     const lastStar = Math.max(...starDays);
 
     const categoryReqs = [
-      ...[0, 1, 2, 3, 4].map(w => ({ text: `It must be a ${WEEKDAY_NAMES[w]}.`, test: d => wd(d) === w })),
-      { text: 'It must be a weekend day.', test: d => wd(d) >= 5 },
-      { text: 'It must be a Monday, Wednesday, or Friday.', test: d => [0, 2, 4].includes(wd(d)) },
+      ...[0, 1, 2, 3, 4].map(w => ({ text: `A ${WEEKDAY_NAMES[w]}`, test: d => wd(d) === w })),
+      { text: 'A weekend day', test: d => wd(d) >= 5 },
+      { text: 'Mon, Wed or Fri', test: d => [0, 2, 4].includes(wd(d)) },
     ];
     const rangeReqs = [
-      { text: 'It must be after the 15th.', test: d => d > 15 },
-      { text: 'It must be on or before the 15th.', test: d => d <= 15 },
-      { text: 'It must fall between the 8th and the 22nd.', test: d => d >= 8 && d <= 22 },
+      { text: 'After the 15th', test: d => d > 15 },
+      { text: 'The 15th or earlier', test: d => d <= 15 },
+      { text: 'From the 8th to the 22nd', test: d => d >= 8 && d <= 22 },
     ];
     const extraReqs = [
-      { text: 'It must be an odd-numbered day.', test: d => d % 2 === 1 },
-      { text: 'It must be an even-numbered day.', test: d => d % 2 === 0 },
-      { text: 'It must not be next to a ◆ day (the day before or after one).', test: d => !diamondDays.includes(d - 1) && !diamondDays.includes(d + 1) },
-      { text: 'It must come after the last ★ of the month.', test: d => d > lastStar },
+      { text: 'An odd number', test: d => d % 2 === 1 },
+      { text: 'An even number', test: d => d % 2 === 0 },
+      { text: 'Not next to a ◆', test: d => !diamondDays.includes(d - 1) && !diamondDays.includes(d + 1) },
+      { text: 'After the last ★', test: d => d > lastStar },
     ];
     const reqs = [R.pick(categoryReqs), R.pick(rangeReqs), R.pick(extraReqs)];
     const solution = all.filter(d => reqs.every(r => r.test(d)));
@@ -419,7 +419,7 @@ function genMonthReqs(R, level) {
       frames: [],
       next: { month: { days, marks: solution } },
       rule: `The qualifying days are ${solution.join(', ')} — the only ones passing all three requirements.`,
-      instruction: `Mark every day that fits ALL the requirements: ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
+      instruction: `Tap every day that is: ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
       answerSpec: { kind: 'month', days, marks },
     };
   }
@@ -437,13 +437,13 @@ function genGridPlace(R, level) {
     const star = R.int(9);
     const free = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter(p => p !== star);
     const candidates = [
-      { text: 'Exactly one dot in each row.', test: s => [0, 1, 2].every(r => s.filter(p => row(p) === r).length === 1) },
-      { text: 'Exactly one dot in each column.', test: s => [0, 1, 2].every(c => s.filter(p => col(p) === c).length === 1) },
-      { text: 'No dot may touch the ★ (not even diagonally).', test: s => s.every(p => !adjacent(p, star)) },
-      { text: 'No two dots may touch each other (not even diagonally).', test: s => s.every(a => s.every(b => a === b || !adjacent(a, b))) },
-      { text: 'Exactly one dot in a corner.', test: s => s.filter(p => CORNERS.includes(p)).length === 1 },
-      { text: 'The centre cell stays empty.', test: s => !s.includes(4) },
-      { text: `No dot in the ★'s row.`, test: s => s.every(p => row(p) !== row(star)) },
+      { text: 'One dot in each row', test: s => [0, 1, 2].every(r => s.filter(p => row(p) === r).length === 1) },
+      { text: 'One dot in each column', test: s => [0, 1, 2].every(c => s.filter(p => col(p) === c).length === 1) },
+      { text: 'No dot touches the ★', test: s => s.every(p => !adjacent(p, star)) },
+      { text: 'No dots touch each other', test: s => s.every(a => s.every(b => a === b || !adjacent(a, b))) },
+      { text: 'One dot in a corner', test: s => s.filter(p => CORNERS.includes(p)).length === 1 },
+      { text: 'Centre stays empty', test: s => !s.includes(4) },
+      { text: `No dot in the ★'s row`, test: s => s.every(p => row(p) !== row(star)) },
     ];
     const reqs = R.sample(candidates, 3);
 
@@ -467,7 +467,7 @@ function genGridPlace(R, level) {
       frames: [starPanel],
       next: answer,
       rule: 'Only one arrangement of three dots satisfies every rule at once.',
-      instruction: `Place exactly 3 dots in the answer grid (the ★ stays where it is): ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
+      instruction: `Place 3 dots: ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
       answerSpec: { kind: 'dots', dotToken: { kind: 'circle', fill: 'solid', scale: 0.8 }, grid3: true, cellPositions: free },
     };
   }
@@ -486,7 +486,7 @@ function genRatioWord(R, level) {
     const k = 2 + R.int(5);
     const total = k * (a + b);
     const first = R.chance(0.5);
-    prompt = `Two businesses split ${total} units of product A in the ratio ${a}:${b}. How many units does business ${first ? 'one' : 'two'} hold?`;
+    prompt = `${total} units are split ${a}:${b}. How many are in the ${first ? 'bigger' : 'smaller'} share?`;
     answer = k * (first ? a : b);
   } else if (variant === 'percent') {
     const opts = [[25, 4], [50, 2], [20, 5], [10, 10], [100, 1]];
@@ -495,17 +495,17 @@ function genRatioWord(R, level) {
     const grew = R.chance(0.5);
     const result = grew ? base + (base * p) / 100 : base - (base * p) / 100;
     if (R.chance(0.5)) {
-      prompt = `A price ${grew ? 'rose' : 'fell'} by ${p}% and is now ${result}. What was it before the change?`;
+      prompt = `A price ${grew ? 'rose' : 'fell'} ${p}% to ${result}. What was it before?`;
       answer = base;
     } else {
-      prompt = `A price of ${base} ${grew ? 'rises' : 'falls'} by ${p}%. What is it after the change?`;
+      prompt = `A price of ${base} ${grew ? 'rises' : 'falls'} ${p}%. What is it now?`;
       answer = result;
     }
   } else {
     const per = 3 + R.int(9);
     const n1 = 2 + R.int(4);
     const n2 = n1 + 2 + R.int(5);
-    prompt = `${n1} crates hold ${n1 * per} units. At the same rate, how many units do ${n2} crates hold?`;
+    prompt = `${n1} crates hold ${n1 * per}. How many do ${n2} crates hold?`;
     answer = n2 * per;
   }
 
@@ -532,13 +532,13 @@ function genRatioBars(R, level) {
     const k = 2 + R.int(5);
     values = [a * k, b * k];
     labels = ['A', 'B'];
-    prompt = `Split ${values[0] + values[1]} between bar A and bar B in the ratio ${a}:${b} (A gets the bigger share).`;
+    prompt = `Split ${values[0] + values[1]} in the ratio ${a}:${b}. A is bigger.`;
   } else {
     const p = R.pick([25, 50, 100]);
     const base = R.pick([8, 12, 16, 20, 24]);
     values = [base, base + (base * p) / 100];
     labels = ['A', 'B'];
-    prompt = `Set bar A to ${base}, and bar B to ${p}% more than A.`;
+    prompt = `A = ${base}. B = ${p}% more.`;
   }
 
   const max = Math.max(...values) + 4 + R.int(6);
@@ -568,13 +568,13 @@ function genSchedule(R, level) {
 
     const lastStar = Math.max(...starDays);
     const candidates = [
-      { text: 'Not on a weekend.', ok: d => d < 5 },
-      { text: 'Not on a ★ or ◆ day.', ok: d => !days[d] },
-      { text: 'Not the day right after a ★ day.', ok: d => !starDays.includes(d - 1) },
-      { text: 'Not next to a ◆ day (either side).', ok: d => !diamondDays.includes(d - 1) && !diamondDays.includes(d + 1) },
-      { text: 'After the last ★ day of the week.', ok: d => d > lastStar },
-      { text: 'Before the first ◆ day of the week.', ok: d => d < Math.min(...diamondDays) },
-      { text: 'In the first half of the week (Mon–Thu).', ok: d => d <= 3 },
+      { text: 'Not a weekend', ok: d => d < 5 },
+      { text: 'Not a ★ or ◆ day', ok: d => !days[d] },
+      { text: 'Not right after a ★', ok: d => !starDays.includes(d - 1) },
+      { text: 'Not next to a ◆', ok: d => !diamondDays.includes(d - 1) && !diamondDays.includes(d + 1) },
+      { text: 'After the last ★', ok: d => d > lastStar },
+      { text: 'Before the first ◆', ok: d => d < Math.min(...diamondDays) },
+      { text: 'Monday to Thursday', ok: d => d <= 3 },
     ];
 
     const rules = R.sample(candidates, 3);
@@ -588,7 +588,7 @@ function genSchedule(R, level) {
       frames: [{ week: { days } }],
       next: { week: { days: answerDays } },
       rule: `Only ${DAY_NAMES[valid[0]]} passes every rule: ${rules.map(r => r.text.toLowerCase().replace(/\.$/, '')).join('; ')}.`,
-      instruction: `Pick the one day that satisfies all three rules: ① ${rules[0].text} ② ${rules[1].text} ③ ${rules[2].text}`,
+      instruction: `Pick the one day that is: ① ${rules[0].text} ② ${rules[1].text} ③ ${rules[2].text}`,
       answerSpec: { kind: 'pickday' },
     };
   }

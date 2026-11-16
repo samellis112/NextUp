@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300..800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=12">
+<link rel="stylesheet" href="css/styles.css?v=16">
 </head>
 <body>
   <!-- Account widget: fixed top-right, visible on every screen -->
@@ -32,13 +32,12 @@
     <!-- ============ DAILY INTRO (default landing while today's daily is unfinished) ============ -->
     <div class="screen menu daily-intro" id="screen-daily-intro">
       <h1 class="logo-hero" aria-label="Next Up"></h1>
-      <div class="subtitle" id="intro-title">Daily Challenge</div>
-      <p class="intro-note" id="intro-sub">5 puzzles · 3 tries each · the same for everyone</p>
-      <p class="intro-note">Spot the pattern, then fill in the “?”.</p>
+      <div class="subtitle" id="intro-title">Daily</div>
       <button class="go-btn" id="btn-start-daily">
-        <span class="go-word">START</span>
-        <span class="sub-note">your time begins when you press</span>
+        <span class="go-word">PLAY</span>
+        <span class="sub-note">5 puzzles · timed</span>
       </button>
+      <p class="intro-note" id="intro-sub"></p>
       <div class="menu-links">
         <button class="menu-link" id="btn-intro-menu">Main menu</button>
         <span aria-hidden="true">·</span>
@@ -52,11 +51,10 @@
     <!-- ============ MAIN MENU ============ -->
     <div class="screen menu" id="screen-menu">
       <h1 class="logo-hero" aria-label="Next Up"></h1>
-      <div class="subtitle">Spot the rule. Five puzzles a day. Three tries each.</div>
       <div class="streak-chip" id="streak-chip" hidden></div>
 
       <button class="go-btn" id="btn-daily">
-        <span class="go-word">GO</span>
+        <span class="go-word">PLAY</span>
         <span class="sub-note" id="go-note">Play today's challenge</span>
       </button>
 
@@ -133,7 +131,7 @@
     <div class="screen" id="screen-leaderboard">
       <div class="leaderboard">
         <h2>Leaderboard</h2>
-        <div class="subtitle" id="leaderboard-subtitle">Today's daily challenge — ranked by points.</div>
+        <div class="subtitle" id="leaderboard-subtitle">Today's daily — fewest tries first, then fastest time.</div>
         <div class="lb-tabs" id="leaderboard-tabs" role="tablist" aria-label="Leaderboard sections"></div>
         <div id="leaderboard-content"></div>
         <button class="back-link" id="btn-leaderboard-back">← Main Menu</button>
@@ -155,6 +153,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="module" src="js/logo.js"></script>
-<script type="module" src="js/game.js?v=12"></script>
+<script type="module" src="js/game.js?v=16"></script>
 </body>
 </html>

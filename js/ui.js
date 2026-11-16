@@ -19,6 +19,8 @@ export function registerScreens(ids) {
 export function showScreen(name) {
   Object.values(screens).forEach(s => s && s.classList.remove('active'));
   if (screens[name]) screens[name].classList.add('active');
+  document.body.dataset.screen = name; // lets CSS/JS react to the current screen
+  document.dispatchEvent(new CustomEvent('nextup:screen', { detail: name }));
   const gate = name === 'invite';
   const bar = document.getElementById('account-bar');
   if (bar) bar.style.display = gate ? 'none' : '';

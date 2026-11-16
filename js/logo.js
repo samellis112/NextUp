@@ -48,7 +48,8 @@ CELLS.forEach(c => { c.S = resample(c.s, M); c.L = resample(c.l, M); });
 const clamp = v => Math.max(0, Math.min(1, v));
 const inOut = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const back = t => { const c1 = 1.7, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
-const T = { pop: .5, popStep: .12, hold: .9, morph: .7, morphStep: .42, gap: .3 };
+// Shape → letter morph is ~20% quicker than it was (hold .9, morph .7, step .42, gap .3).
+const T = { pop: .5, popStep: .12, hold: .7, morph: .56, morphStep: .33, gap: .24 };
 const ms = i => T.popStep * 5 + T.pop + T.hold + i * T.morphStep + (i >= 4 ? T.gap : 0);
 const END = ms(5) + T.morph;
 

@@ -3,6 +3,14 @@
 SQL files here are applied manually in the Supabase dashboard — nothing in the
 app runs them.
 
+## feedback-migration.sql
+
+Creates the `feedback` table for the two 1–5 ratings asked after a "Try the
+game" puzzle (`postFeedback` in [js/social.js](../js/social.js)). Insert-only
+for the browser, no sign-in needed; read the results in the dashboard. Paste
+the whole file into the SQL editor and click **Run** — until then the "Send
+feedback" button fails with "Couldn't send that".
+
 ## scores-hardening.sql
 
 Locks down the `scores` table, which the game writes to directly from the

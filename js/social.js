@@ -138,6 +138,29 @@ export function postScore({ difficulty, avgMs, accuracy, attempts, dayKey, local
   });
 }
 
+/* Ratings from the "Try the game" result screen. Works signed out (anon key);
+   the `feedback` table is insert-only for clients — see
+   supabase/feedback-migration.sql. Resolves to true when the row was saved. */
+export async function postFeedback({ rating, recommend, solved, tries, timeMs, family, difficulty }) {
+  try {
+    const { error } = await sb.from('feedback').insert({
+      rating,
+      recommend,
+      solved: !!solved,
+      tries: tries ?? null,
+      time_ms: timeMs != null ? Math.round(timeMs) : null,
+      family: family ?? null,
+      difficulty: difficulty ?? null,
+      user_id: currentUser ? currentUser.id : null,
+    });
+    if (error) { console.error('Feedback insert failed:', error.message); return false; }
+    return true;
+  } catch (e) {
+    console.error('Feedback insert failed:', e);
+    return false;
+  }
+}
+
 /* Submit any locally-saved results that never reached the leaderboard — e.g. a
    round finished while signed out, then the player signs in. Idempotent: each
    posted result is tagged locally, and an in-flight guard stops the SIGNED_IN

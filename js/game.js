@@ -20,7 +20,7 @@ import { esc, registerScreens, showScreen, activeScreen, openModal, closeModal }
 import {
   currentUser, initAuth, capturePendingInvite, resolvePendingInvite,
   showInviteLanding, openLeaderboard, postScore,
-  signInWithGoogle, googleButtonHtml, requireAccount, potentialDailyRank,
+  signInWithGoogle, googleButtonHtml, requireAccount, potentialDailyRank, postFeedback,
 } from './social.js';
 
 const PRACTICE_LENGTH = 5;
@@ -157,9 +157,110 @@ function finishTrial() {
   document.getElementById('modal-trial-later').addEventListener('click', closeModal);
 }
 
-function totalLength() {
-  return game.mode === 'daily' ? DAILY_LENGTH : game.mode === 'trial' ? 1 : PRACTICE_LENGTH;
+/* "Try the game": one random puzzle, then a result with Play Again. Meant for
+   handing to someone new (also reachable directly with ?try in the link).
+   Nothing is saved or posted. */
+function startDemo() {
+  closeModal();
+  const R = rngHelpers(makeRng(null));
+  const q = generateProblem(R, R.pick(['easy', 'medium']));
+  if (!q.instruction) q.instruction = 'What comes next? Fill in the “?”. You get 3 tries.';
+  game = {
+    mode: 'demo',
+    questions: [q],
+    idx: 0,
+    results: [],
+    answered: false,
+    heat: 0,
+    elapsedMs: 0,
+    startTs: 0,
+    timerId: null,
+  };
+  primeAudio();
+  setStreakHeat(0);
+  showLevels(0);
+  showScreen('round');
+  loadQuestion();
 }
+
+const fbButtons = () => [1, 2, 3, 4, 5]
+  .map(n => `<button type="button" class="fb-num" data-v="${n}" aria-pressed="false">${n}</button>`).join('');
+
+/* Two 1–5 ratings on the try-mode result; sent once, to the feedback table. */
+function wireDemoFeedback(r, q) {
+  const box = document.getElementById('demo-feedback');
+  const send = document.getElementById('btn-fb-send');
+  const status = document.getElementById('fb-status');
+  const picked = { rating: null, recommend: null };
+  box.querySelectorAll('.fb-scale').forEach(scale => {
+    scale.querySelectorAll('.fb-num').forEach(btn => btn.addEventListener('click', () => {
+      picked[scale.dataset.fb] = parseInt(btn.dataset.v, 10);
+      scale.querySelectorAll('.fb-num').forEach(b => {
+        b.classList.toggle('sel', b === btn);
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+      send.disabled = !(picked.rating && picked.recommend);
+    }));
+  });
+  send.addEventListener('click', async () => {
+    send.disabled = true;
+    status.textContent = 'Sending…';
+    const ok = await postFeedback({
+      rating: picked.rating, recommend: picked.recommend,
+      solved: r.solved, tries: r.tries, timeMs: r.timeMs,
+      family: q.family, difficulty: q.difficulty,
+    });
+    if (ok) {
+      box.classList.add('sent');
+      box.querySelectorAll('.fb-num').forEach(b => { b.disabled = true; });
+      send.hidden = true;
+      status.textContent = 'Thanks — that really helps!';
+    } else {
+      send.disabled = false;
+      status.textContent = 'Couldn’t send that — please try again.';
+    }
+  });
+}
+
+function showDemoResult(r, q) {
+  const container = document.getElementById('results-body');
+  container.innerHTML = `
+    <h2>${r.solved ? (r.tries === 1 ? 'Solved first try!' : 'Solved!') : 'Not this time'}</h2>
+    <div class="big">${r.solved ? '✓' : '✕'}</div>
+    <div class="big-label">${r.solved ? 'You spotted the rule' : 'The rule got away'}</div>
+
+    <div class="results-grid results-grid-2">
+      <div class="result-stat"><div class="val">${r.solved ? `${r.tries} of ${MAX_TRIES}` : `${MAX_TRIES} of ${MAX_TRIES}`}</div><div class="lbl">Tries used</div></div>
+      <div class="result-stat"><div class="val">${(r.timeMs / 1000).toFixed(1)}s</div><div class="lbl">Time</div></div>
+    </div>
+    ${q.rule ? `<div class="rule-note demo-rule"><b>The rule:</b> ${esc(q.rule)}</div>` : ''}
+
+    <div class="demo-feedback" id="demo-feedback">
+      <div class="fb-q">How would you rate the game?</div>
+      <div class="fb-scale" data-fb="rating" role="group" aria-label="Rate the game from 1 to 5">${fbButtons()}</div>
+      <div class="fb-ends"><span>Not for me</span><span>Loved it</span></div>
+      <div class="fb-q">Would you recommend it to your friends?</div>
+      <div class="fb-scale" data-fb="recommend" role="group" aria-label="Would you recommend it, from 1 to 5">${fbButtons()}</div>
+      <div class="fb-ends"><span>No way</span><span>Definitely</span></div>
+      <button class="fb-send" id="btn-fb-send" disabled>Send feedback</button>
+      <div class="fb-status" id="fb-status" aria-live="polite"></div>
+    </div>
+
+    <div class="results-cta">
+      <button class="share-big" id="btn-demo-again">Play Again</button>
+      <button class="leaderboard-big" id="btn-demo-daily">Play today's 5 puzzles</button>
+    </div>
+    <div class="results-actions">
+      <button class="back-link" id="btn-results-menu2">Main Menu</button>
+    </div>`;
+  showScreen('results');
+  wireDemoFeedback(r, q);
+  document.getElementById('btn-demo-again').addEventListener('click', startDemo);
+  document.getElementById('btn-demo-daily').addEventListener('click', goDaily);
+  document.getElementById('btn-results-menu2').addEventListener('click', () => { renderMenu(); showScreen('menu'); });
+}
+
+function totalLength() { return game.questions ? game.questions.length : PRACTICE_LENGTH; }
 
 function currentQuestion() {
   if (game.questions) return game.questions[game.idx];
@@ -178,7 +279,7 @@ function loadQuestion() {
 
   const trial = game.mode === 'trial';
   document.getElementById('screen-round').classList.toggle('is-trial', trial);
-  ui.problemNum.textContent = trial ? 'Warm-up' : `${game.idx + 1}/${n}`;
+  ui.problemNum.textContent = trial ? 'Warm-up' : game.mode === 'demo' ? 'Try it' : `${game.idx + 1}/${n}`;
   ui.progress.style.width = (game.idx / n * 100) + '%';
   ui.msg.textContent = '';
   ui.msg.className = 'msg';
@@ -438,6 +539,15 @@ function nextOrFinish() {
 
 function finishRound() {
   if (game.mode === 'trial') { finishTrial(); return; }
+  if (game.mode === 'demo') {
+    const r = game.results[0], q = game.questions[0];
+    game = null;
+    setStreakHeat(0);
+    hideLevels();
+    playSound('round');
+    showDemoResult(r, q);
+    return;
+  }
   const results = game.results;
   const totalMs = results.reduce((s, r) => s + r.timeMs, 0);
   const solved = totalSolved(results);
@@ -829,6 +939,8 @@ document.getElementById('btn-intro-menu').addEventListener('click', () => { rend
 document.getElementById('btn-intro-howto').addEventListener('click', howToPlay);
 document.getElementById('btn-daily').addEventListener('click', goDaily);
 document.getElementById('btn-practice').addEventListener('click', startPractice);
+document.getElementById('btn-try').addEventListener('click', startDemo);
+document.getElementById('btn-intro-try').addEventListener('click', startDemo);
 document.getElementById('btn-stats').addEventListener('click', openStats);
 document.getElementById('btn-history').addEventListener('click', openHistory);
 document.getElementById('btn-leaderboard').addEventListener('click', openLeaderboard);
@@ -890,6 +1002,8 @@ initAuth({
   } else if (user) {
     resolvePendingInvite();
   }
+  // A "try the game" link (…/?try) drops the visitor straight into one puzzle.
+  if (new URLSearchParams(window.location.search).has('try')) { startDemo(); return; }
   // Daily unfinished → land straight on the daily intro so players hop right
   // in; finished → the normal menu.
   if (!getDailyResult(todayKey())) showDailyIntro();

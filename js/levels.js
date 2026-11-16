@@ -1,9 +1,9 @@
 /* "Changing levels" background for a round.
 
-   Every solved puzzle lifts you a level: the sky brightens, the two side bars
-   fill from the bottom and their bands slide down past you (so you feel
-   yourself rising). A missed puzzle sinks you a level: it dims and the bands
-   run the other way. A wrong try is a small slip.
+   Every solved puzzle lifts you a level: the sky brightens and the specks
+   behind the puzzle stream down past you (so you feel yourself rising). A
+   missed puzzle sinks you a level: it dims and the specks run the other way.
+   A wrong try is a small slip. No bars or meters — just the movement.
 
    Purely decorative: one fixed layer behind the page, built lazily, hidden
    outside rounds. Under prefers-reduced-motion only the colours change. */
@@ -21,11 +21,11 @@ const SKY_LIGHT = [
   ['#c9d1de', '#d9dfe9'], ['#d5dce7', '#e3e8f0'], ['#e0e6ef', '#edf1f7'],
   ['#eaeff6', '#f5f7fb'], ['#f3f6fb', '#fdfdff'], ['#ffffff', '#fff3d6'],
 ];
-const STEP_PX = 320; // how far the bars travel per level
+const STEP_PX = 320; // how far the nearest specks travel per level
 
 let root = null;
 let level = 0;
-let travel = 0; // total bar scroll in px; grows as you climb
+let travel = 0; // total scroll in px; grows as you climb
 
 function ensure() {
   if (root && document.body.contains(root)) return root;
@@ -34,9 +34,7 @@ function ensure() {
   root.setAttribute('aria-hidden', 'true');
   root.innerHTML = `
     <div class="lvl-glow"></div>
-    <div class="lvl-specks"></div>
-    <div class="lvl-rail left"><div class="lvl-fill"></div><div class="lvl-bands"></div></div>
-    <div class="lvl-rail right"><div class="lvl-fill"></div><div class="lvl-bands"></div></div>`;
+    <div class="lvl-specks"></div>`;
   document.body.prepend(root);
   return root;
 }
@@ -48,11 +46,10 @@ function paint() {
   el.style.setProperty('--sky-top', top);
   el.style.setProperty('--sky-bot', bot);
   el.querySelector('.lvl-glow').style.opacity = String(Math.max(0, (level - 2) / 3));
-  el.querySelectorAll('.lvl-fill').forEach(f => { f.style.height = (level / MAX_LEVEL * 100) + '%'; });
   if (reducedMotion()) return;
-  el.querySelectorAll('.lvl-bands').forEach(b => { b.style.backgroundPosition = `0 ${travel}px`; });
+  // Three layers at different speeds: near specks move furthest (depth).
   el.querySelector('.lvl-specks').style.backgroundPosition =
-    `20px ${travel * 0.3}px, 80px ${60 + travel * 0.18}px`;
+    `40px ${travel}px, 20px ${travel * 0.55}px, 80px ${60 + travel * 0.3}px`;
 }
 
 /* Lift / drop the puzzle so the content moves with the level. (The panel, not

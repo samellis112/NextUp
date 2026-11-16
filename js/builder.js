@@ -61,6 +61,7 @@ function toPanel(spec, st) {
     const cols = spec.cols || 3;
     const cells = Array(cols * cols).fill(null);
     for (const p of st.cells) cells[p] = { ...spec.dotToken };
+    for (const [p, tok] of Object.entries(spec.fixed || {})) cells[p] = { ...tok }; // e.g. the ★
     const panel = { cells, cols };
     if (cols === 5) panel.grid5 = true; else if (spec.grid3) panel.grid3 = true;
     return panel;

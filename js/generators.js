@@ -426,49 +426,57 @@ function genMonthReqs(R, level) {
   return genSchedule(R, level); // vanishingly unlikely fallback
 }
 
-/* Grid placement: a 3x3 board with a fixed ★; place dots so every rule holds.
-   Constraints are solver-verified to admit exactly ONE arrangement. */
+/* Dot placement: a 4×4 board with one ★ already on it. Place 4 dots so every
+   rule holds. Rules are solver-checked so exactly ONE arrangement works. The ★
+   is drawn right on the board you fill in (its square can't take a dot). */
 function genGridPlace(R, level) {
-  const row = p => Math.floor(p / 3), col = p => p % 3;
-  const adjacent = (a, b) => Math.abs(row(a) - row(b)) <= 1 && Math.abs(col(a) - col(b)) <= 1 && a !== b;
-  const CORNERS = [0, 2, 6, 8];
+  const N = 4, DOTS = 4;
+  const row = p => Math.floor(p / N), col = p => p % N;
+  const touching = (a, b) => a !== b && Math.abs(row(a) - row(b)) <= 1 && Math.abs(col(a) - col(b)) <= 1;
+  const CORNERS = [0, N - 1, N * (N - 1), N * N - 1];
+  const MIDDLE = [5, 6, 9, 10];
+  const ALL = [...Array(N * N).keys()];
+  const starTok = { kind: 'star', fill: 'orange', scale: 0.7 };
+  const dotTok = { kind: 'circle', fill: 'solid', scale: 0.8 };
 
-  for (let attempt = 0; attempt < 120; attempt++) {
-    const star = R.int(9);
-    const free = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter(p => p !== star);
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const star = R.int(N * N);
+    const free = ALL.filter(p => p !== star);
     const candidates = [
-      { text: 'One dot in each row', test: s => [0, 1, 2].every(r => s.filter(p => row(p) === r).length === 1) },
-      { text: 'One dot in each column', test: s => [0, 1, 2].every(c => s.filter(p => col(p) === c).length === 1) },
-      { text: 'No dot touches the ★', test: s => s.every(p => !adjacent(p, star)) },
-      { text: 'No dots touch each other', test: s => s.every(a => s.every(b => a === b || !adjacent(a, b))) },
-      { text: 'One dot in a corner', test: s => s.filter(p => CORNERS.includes(p)).length === 1 },
-      { text: 'Centre stays empty', test: s => !s.includes(4) },
-      { text: `No dot in the ★'s row`, test: s => s.every(p => row(p) !== row(star)) },
+      { text: 'One dot in every row', test: s => [0, 1, 2, 3].every(r => s.filter(p => row(p) === r).length === 1) },
+      { text: 'One dot in every column', test: s => [0, 1, 2, 3].every(c => s.filter(p => col(p) === c).length === 1) },
+      { text: 'Dots never touch each other (not even corners)', test: s => s.every(a => s.every(b => !touching(a, b))) },
+      { text: 'No dot touches the ★ (not even corners)', test: s => s.every(p => !touching(p, star)) },
+      { text: 'No dots in the corners', test: s => s.every(p => !CORNERS.includes(p)) },
+      { text: 'No dots in the middle 4 squares', test: s => s.every(p => !MIDDLE.includes(p)) },
+      { text: "No dot in the ★'s row", test: s => s.every(p => row(p) !== row(star)) },
+      { text: "No dot in the ★'s column", test: s => s.every(p => col(p) !== col(star)) },
     ];
-    const reqs = R.sample(candidates, 3);
+    // "Dots never touch" is always rule ①; two more are drawn at random and
+    // the solver keeps only combinations with exactly one answer.
+    const reqs = [candidates[2], ...R.sample(candidates.filter((_, i) => i !== 2), 2)];
 
-    // Enumerate all 3-dot placements on the free cells; demand a unique fit.
     const fits = [];
-    for (let a = 0; a < free.length - 2 && fits.length < 2; a++)
-      for (let b = a + 1; b < free.length - 1 && fits.length < 2; b++)
-        for (let c = b + 1; c < free.length && fits.length < 2; c++) {
-          const s = [free[a], free[b], free[c]];
-          if (reqs.every(r => r.test(s))) fits.push(s);
-        }
+    const pick = (start, chosen) => {
+      if (fits.length > 1) return;
+      if (chosen.length === DOTS) { if (reqs.every(r => r.test(chosen))) fits.push(chosen.slice()); return; }
+      for (let i = start; i < free.length; i++) { chosen.push(free[i]); pick(i + 1, chosen); chosen.pop(); }
+    };
+    pick(0, []);
     if (fits.length !== 1) continue;
 
-    const starPanel = { grid3: true, cells: Array(9).fill(null) };
-    starPanel.cells[star] = { kind: 'star', fill: 'orange', scale: 0.7 };
-    const answer = { grid3: true, cells: Array(9).fill(null) };
-    for (const p of fits[0]) answer.cells[p] = { kind: 'circle', fill: 'solid', scale: 0.8 };
+    const fixed = { [star]: { ...starTok } };
+    const answer = { grid3: true, cols: N, cells: Array(N * N).fill(null) };
+    answer.cells[star] = { ...starTok };
+    for (const p of fits[0]) answer.cells[p] = { ...dotTok };
 
     return {
-      type: 'single', family: 'dots',
-      frames: [starPanel],
+      type: 'single', family: 'place',
+      frames: [],
       next: answer,
-      rule: 'Only one arrangement of three dots satisfies every rule at once.',
-      instruction: `Place 3 dots: ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
-      answerSpec: { kind: 'dots', dotToken: { kind: 'circle', fill: 'solid', scale: 0.8 }, grid3: true, cellPositions: free },
+      rule: 'Only one way to place the four dots follows every rule.',
+      instruction: `Place 4 dots: ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
+      answerSpec: { kind: 'dots', dotToken: dotTok, grid3: true, cols: N, cellPositions: free, fixed },
     };
   }
   return genSchedule(R, level);
@@ -735,8 +743,16 @@ export function generateTrial(R) {
   return packQuestion(genAlternation(R, 1), 'easy', R);
 }
 
-export function generateProblem(R, difficulty) {
-  const pool = POOLS[difficulty] || POOLS.medium;
+/* `avoid` (optional): generator names not to use — the daily passes the ones
+   it already has, so a round never repeats a puzzle type. */
+export function generateProblem(R, difficulty, avoid = null) {
+  let pool = POOLS[difficulty] || POOLS.medium;
+  if (avoid && avoid.length) {
+    const left = pool.filter(([g]) => !avoid.includes(g.name));
+    if (left.length) pool = left;
+  }
   const [gen, level] = R.pick(pool);
-  return packQuestion(gen(R, level), difficulty, R);
+  const q = packQuestion(gen(R, level), difficulty, R);
+  q.gen = gen.name;
+  return q;
 }

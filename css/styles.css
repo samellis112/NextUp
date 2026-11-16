@@ -2148,3 +2148,11 @@ body[data-screen="round"] #screen-round.active { justify-content: safe center; }
     body[data-screen="round"] #screen-round.active { min-height: calc(100svh - 24px - 64px); }
   }
 }
+
+/* Dot placement (4×4): the board is the whole puzzle, a little larger */
+@media (min-width: 561px) {
+  #screen-round .panel[data-family="place"] #answer-slot.tile.answer-big { width: min(70vw, 38vh, 440px); height: min(70vw, 38vh, 440px); }
+}
+@media (max-width: 560px) {
+  #screen-round .panel[data-family="place"] #answer-slot.tile.answer-big { width: min(84vw, 40vh); height: min(84vw, 40vh); }
+}

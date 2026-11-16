@@ -4,8 +4,8 @@
 import './migrate.js'; // must stay first: renames saved data before anything reads it
 import { makeRng, rngHelpers } from './rng.js';
 import { renderPanel, panelEq } from './panels.js';
-import { generateProblem, generateNestedFinale, generateTrial } from './generators.js';
-import { renderBuilder } from './builder.js?v=46';
+import { generateProblem, generateNestedFinale, generateTrial } from './generators.js?v=56';
+import { renderBuilder } from './builder.js?v=55';
 import { shake, playSound, setStreakHeat, primeAudio, isMuted, setMuted, reducedMotion } from './feel.js';
 import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults, setScenes } from './levels.js?v=33';
 import {
@@ -68,6 +68,14 @@ function clearDailyProgress() {
 function dailyQuestions() {
   const R = rngHelpers(makeRng(dailySeed()));
   const qs = dailyRamp().map(diff => generateProblem(R, diff));
+  // No puzzle type twice in one daily: a repeat is re-drawn from its own
+  // side seed, so the other puzzles of the day stay exactly as they were.
+  qs.forEach((q, i) => {
+    const earlier = qs.slice(0, i).map(e => e.gen);
+    if (earlier.includes(q.gen)) {
+      qs[i] = generateProblem(rngHelpers(makeRng(dailySeed() + ':alt' + i)), q.difficulty, earlier);
+    }
+  });
   qs.push(generateNestedFinale(R)); // hard nested-shape finale
   return qs;
 }
@@ -317,6 +325,10 @@ function loadQuestion() {
   } else if (fam === 'bars') {
     ui.sequence.className = 'bars-layout';
     ui.sequence.innerHTML = `<div id="answer-slot" class="bars-slot"></div>`;
+  } else if (fam === 'place') {
+    // One board to fill in — no numbered frames.
+    ui.sequence.className = 'sequence place-layout';
+    ui.sequence.innerHTML = `<div class="answer-stage"><div class="tile question answer-big" id="answer-slot"></div></div>`;
   } else if (fam === 'word') {
     ui.sequence.className = 'word-layout';
     ui.sequence.innerHTML = `<div class="word-prompt">${esc(q.prompt || '')}</div>` + ANSWER_STAGE;
@@ -496,7 +508,10 @@ function markAnswerInSlot(slot, next) {
     return true;
   }
   if (next.cells && slot.querySelector('[data-cell]')) {
-    slot.querySelectorAll('[data-cell]').forEach(b => b.classList.toggle('c-answer', !!next.cells[+b.dataset.cell]));
+    slot.querySelectorAll('[data-cell]').forEach(b => {
+      const t = next.cells[+b.dataset.cell];
+      b.classList.toggle('c-answer', !!t && t.kind !== 'star');
+    });
     return true;
   }
   if (next.bars) {

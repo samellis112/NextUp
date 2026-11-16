@@ -1961,3 +1961,87 @@ body.sky-scene #screen-round #timer.round-timer { color: #0e2a52; text-shadow: 0
 #screen-round .reveal .tile svg { width: 100%; height: 100%; }
 #screen-round .reveal .tile.week-tile { width: auto; height: auto; }
 #screen-round .reveal .tile.week-tile svg { width: auto; height: auto; max-width: 100%; }
+
+/* ============================================================
+   Puzzle sizing, round 2 — a notch bigger, tuned per screen size
+   ============================================================
+   Desktop/tablet is height-limited, so pieces take a larger share of the
+   screen height; phones are width-limited, so pieces take most of the width
+   and the answer box grows into the spare height. Puzzles with a line of
+   directions above them give that height back from the answer box. */
+
+/* no Privacy/Terms footer mid-puzzle — keeps the round on one screen */
+body[data-screen="round"] .site-footer { display: none; }
+
+@media (min-width: 561px) {
+  #screen-round .panel { padding-bottom: 40px; }
+
+  /* sequences: 1 2 3 4 → 5 */
+  #screen-round .sequence .tile.frame-tile { width: min(21vw, 21vh, 280px); height: min(21vw, 21vh, 280px); }
+  #screen-round .panel .tile.answer-big { width: min(74vw, 38vh, 560px); height: min(74vw, 38vh, 560px); }
+  #screen-round .choice-opt { width: min(17vw, 21vh, 260px); height: min(17vw, 21vh, 260px); }
+  #screen-round .panel:has(.instruction:not([hidden])) .tile.answer-big { width: min(74vw, 32vh, 520px); height: min(74vw, 32vh, 520px); }
+
+  /* number + word: answer box shares the height with the keypad */
+  #screen-round .panel[data-family="number"] .tile.answer-big,
+  #screen-round .panel[data-family="word"] .tile.answer-big { width: min(56vw, 19vh, 260px); height: min(56vw, 19vh, 260px); }
+  #screen-round .bld-numpad { grid-template-columns: repeat(3, min(22vw, 6.6vh, 96px)); }
+  #screen-round .bld-key { min-height: min(22vw, 6.6vh, 96px); }
+
+  /* 3×3 matrices */
+  #screen-round .matrix .tile { width: min(27vw, 19vh, 260px); height: min(27vw, 19vh, 260px); }
+  #screen-round .panel:not(:has(.choices)) .matrix .tile { width: min(27vw, 22.5vh, 300px); height: min(27vw, 22.5vh, 300px); }
+
+  /* A + B = ? */
+  #screen-round .combine-cell { width: min(24vw, 20.5vh, 250px); height: min(24vw, 20.5vh, 250px); }
+
+  /* numbers-add-up */
+  #screen-round .sumgrid { --c: min(19vw, 8.6vh, 130px); }
+
+  /* calendar, week, bars */
+  #screen-round .month-slot { max-width: min(94vw, 86vh, 860px); }
+  #screen-round .m-day { min-height: clamp(44px, 8.6vh, 96px); }
+  #screen-round .week-row { width: min(94vw, 900px); }
+  #screen-round .slot-day { min-height: clamp(56px, 10vh, 104px); }
+  #screen-round .bar-track { width: clamp(64px, 13vw, 140px); height: min(46vh, 500px); }
+}
+
+@media (max-width: 560px) {
+  /* phones: the four frames and five choices already span the width, so the
+     answer box takes the spare height instead */
+  #screen-round .sequence .tile.frame-tile { width: min(22vw, 13vh); height: min(22vw, 13vh); }
+  #screen-round .panel .tile.answer-big { width: min(86vw, 40vh); height: min(86vw, 40vh); }
+  #screen-round .panel:has(.instruction:not([hidden])) .tile.answer-big { width: min(86vw, 33vh); height: min(86vw, 33vh); }
+  #screen-round .panel[data-family="number"] .tile.answer-big,
+  #screen-round .panel[data-family="word"] .tile.answer-big { width: min(56vw, 16vh); height: min(56vw, 16vh); }
+  #screen-round .matrix .tile { width: min(29.5vw, 16vh); height: min(29.5vw, 16vh); }
+  #screen-round .panel:not(:has(.choices)) .matrix .tile { width: min(29.5vw, 19vh); height: min(29.5vw, 19vh); }
+}
+
+/* Short screens (laptops): text and the timer scale with the height too, and
+   the text-heavy puzzles (three numbered rules) give a little more back. */
+#screen-round .instr-head { font-size: clamp(20px, min(4.5vw, 3.4vh), 30px); }
+#screen-round .instr-item { font-size: clamp(16px, min(3.6vw, 2.6vh), 22px); margin-top: clamp(2px, 0.6vh, 6px); }
+#timer.round-timer { font-size: clamp(26px, min(6vw, 4.4vh), 40px); margin-bottom: clamp(8px, 1.5vh, 14px); }
+@media (min-width: 561px) {
+  #screen-round .combine-cell { width: min(24vw, 19.5vh, 250px); height: min(24vw, 19.5vh, 250px); }
+  #screen-round .panel:has(.instruction:not([hidden]) .instr-item) .tile.answer-big { width: min(74vw, 27vh, 480px); height: min(74vw, 27vh, 480px); }
+  #screen-round .panel:has(.instr-item) .m-day { min-height: clamp(40px, 7.4vh, 90px); }
+  #screen-round .week-row { width: min(94vw, 900px, 108vh); }
+}
+@media (min-width: 561px) {
+  #screen-round .panel:has(.instr-item) .sequence .tile.frame-tile { width: min(21vw, 16vh, 240px); height: min(21vw, 16vh, 240px); }
+}
+
+/* Tall phones: answer choices wrap to two rows (3 + 2) so they're big enough
+   to tap comfortably; the answer box gives up a little height to make room. */
+@media (max-width: 560px) and (min-height: 740px) {
+  #screen-round .choices { gap: 10px; }
+  #screen-round .choice-opt { width: min(28vw, 13vh); height: min(28vw, 13vh); }
+  #screen-round .panel:has(.choices) .tile.answer-big { width: min(86vw, 33vh); height: min(86vw, 33vh); }
+}
+/* Short phones: rules-heavy puzzles tighten up so the Submit button stays on screen. */
+@media (max-width: 560px) and (max-height: 700px) {
+  #screen-round .panel:has(.instruction:not([hidden]) .instr-item) .tile.answer-big { width: min(86vw, 28vh); height: min(86vw, 28vh); }
+  #screen-round .m-day { min-height: clamp(34px, 6.2vh, 60px); }
+}

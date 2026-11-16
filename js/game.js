@@ -1034,17 +1034,28 @@ function goDaily() {
   showDailyIntro();
 }
 
+/* Pressing Play on a home screen: the landing gradient slides down off the
+   screen (and the page content drops away with it), then the round starts. */
+function playTransition(start) {
+  if (reducedMotion() || !['menu', 'daily-intro'].includes(activeScreen())) { start(); return; }
+  document.body.classList.add('sky-leaving');
+  setTimeout(() => {
+    start();
+    document.body.classList.remove('sky-leaving');
+  }, 700);
+}
+
 document.getElementById('btn-start-daily').addEventListener('click', () => {
   primeAudio();
-  startDaily();
+  playTransition(startDaily);
 });
 document.getElementById('btn-intro-leaderboard').addEventListener('click', openLeaderboard);
 document.getElementById('btn-intro-menu').addEventListener('click', () => { renderMenu(); showScreen('menu'); });
 document.getElementById('btn-intro-howto').addEventListener('click', howToPlay);
 document.getElementById('btn-daily').addEventListener('click', goDaily);
-document.getElementById('btn-practice').addEventListener('click', startPractice);
-document.getElementById('btn-try').addEventListener('click', startDemo);
-document.getElementById('btn-intro-try').addEventListener('click', startDemo);
+document.getElementById('btn-practice').addEventListener('click', () => playTransition(startPractice));
+document.getElementById('btn-try').addEventListener('click', () => playTransition(startDemo));
+document.getElementById('btn-intro-try').addEventListener('click', () => playTransition(startDemo));
 document.getElementById('btn-stats').addEventListener('click', openStats);
 document.getElementById('btn-history').addEventListener('click', openHistory);
 document.getElementById('btn-leaderboard').addEventListener('click', openLeaderboard);

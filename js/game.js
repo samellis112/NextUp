@@ -346,13 +346,28 @@ function loadQuestion() {
 }
 
 /* Timer pauses while the tab is hidden so solve times stay honest. */
+/* The clock on screen is the RUNNING TOTAL for the whole round: every
+   finished puzzle's time plus the one in progress. It pauses between puzzles
+   (while you read the result) and picks up when the next one loads. Under a
+   minute it reads "42.37s"; from a minute on, "01:05.42". Scoring still uses
+   each puzzle's own time. */
+function formatClock(ms) {
+  const cs = Math.floor(ms / 10);                 // centiseconds
+  const totalSec = Math.floor(cs / 100);
+  const frac = String(cs % 100).padStart(2, '0');
+  if (totalSec < 60) return `${totalSec}.${frac}s`;
+  const m = Math.floor(totalSec / 60), sec = totalSec % 60;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${frac}`;
+}
+const finishedMs = () => (game ? game.results.reduce((s, r) => s + r.timeMs, 0) : 0);
+function paintClock() { ui.timer.textContent = formatClock(finishedMs() + currentElapsed()); }
+
 function startTimer() {
   game.elapsedMs = 0;
   game.startTs = performance.now();
   if (game.timerId) clearInterval(game.timerId);
-  game.timerId = setInterval(() => {
-    ui.timer.textContent = (currentElapsed() / 1000).toFixed(1) + 's';
-  }, 100);
+  paintClock();
+  game.timerId = setInterval(paintClock, 47);
 }
 function currentElapsed() {
   return game.elapsedMs + (game.startTs ? performance.now() - game.startTs : 0);
@@ -415,6 +430,7 @@ function registerTry(correct) {
 function afterResolve(correct) {
   const elapsed = stopTimer();
   game.results.push({ solved: correct, tries: game.tries, timeMs: Math.round(elapsed) });
+  ui.timer.textContent = formatClock(finishedMs()); // the clock holds at the round total
   const q = currentQuestion();
 
   ui.msg.textContent = correct
@@ -426,10 +442,17 @@ function afterResolve(correct) {
   if (game.mode === 'daily') saveDailyProgress(game.results);
 
   const last = game.idx + 1 >= totalLength();
-  ui.next.textContent = last ? '✓' : '→';
+  ui.next.textContent = last ? 'See results →' : 'Next →';
   ui.next.setAttribute('aria-label', last ? 'See results' : 'Next puzzle');
   ui.next.hidden = false;
-  ui.next.focus({ preventScroll: true }); // the result bar is pinned to the bottom, always in view
+  ui.next.focus({ preventScroll: true });
+  // If the window is too short to show it, bring Next into view (in the page, no pop-up).
+  setTimeout(() => {
+    const r = ui.next.getBoundingClientRect();
+    if (r.bottom > window.innerHeight || r.top < 0) {
+      ui.next.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    }
+  }, 50);
 }
 
 /* Direct-input puzzles (dots, number, calendar, schedule, bars). */

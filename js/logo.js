@@ -56,16 +56,31 @@ function build(host) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '-10 -10 685 120');
   svg.setAttribute('aria-hidden', 'true');
+  // Soft shadow drawn inside the SVG with a generous filter area. (A CSS
+  // drop-shadow on the whole <svg> showed a hard-edged box in some browsers.)
+  const uid = 'logo' + Math.random().toString(36).slice(2, 8);
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML = `<filter id="${uid}" x="-60%" y="-60%" width="220%" height="240%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#04122d" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#04122d" flood-opacity="0.25"/>
+    </filter>`;
+  svg.appendChild(defs);
   const els = CELLS.map(c => {
-    const g = document.createElementNS(NS, 'g'), p = document.createElementNS(NS, 'path');
-    p.setAttribute('fill', 'none');
-    p.setAttribute('stroke-width', SW);
-    p.setAttribute('stroke-linecap', 'round');
-    p.setAttribute('stroke-linejoin', 'round');
-    p.style.stroke = c.c;
-    g.appendChild(p);
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('filter', `url(#${uid})`);
+    const mk = () => {
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke-linecap', 'round');
+      p.setAttribute('stroke-linejoin', 'round');
+      return p;
+    };
+    // a light outline under each letter (the border), then the letter itself
+    const rim = mk(); rim.setAttribute('stroke-width', SW + 4); rim.setAttribute('class', 'logo-rim');
+    const p = mk(); p.setAttribute('stroke-width', SW); p.style.stroke = c.c;
+    g.append(rim, p);
     svg.appendChild(g);
-    return { g, p };
+    return { g, p, rim };
   });
   host.textContent = '';
   host.appendChild(svg);
@@ -76,6 +91,7 @@ function build(host) {
       return (a[0] + (b[0] - a[0]) * e).toFixed(1) + ' ' + (a[1] + (b[1] - a[1]) * e).toFixed(1);
     });
     els[i].p.setAttribute('d', 'M' + pts.join('L'));
+    els[i].rim.setAttribute('d', 'M' + pts.join('L'));
     const sc = (pop >= 1 ? 1 : back(pop)) * (1 + .12 * Math.sin(Math.PI * mo));
     els[i].g.setAttribute('opacity', pop > 0 ? 1 : 0);
     els[i].g.setAttribute('transform', `translate(${c.x + 50} 50) scale(${sc.toFixed(3)}) translate(-50 -50)`);

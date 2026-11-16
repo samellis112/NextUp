@@ -2201,3 +2201,9 @@ body[data-screen="daily-intro"] .logo-hero svg {
     drop-shadow(0 6px 10px rgba(4, 18, 45, 0.55))
     drop-shadow(0 14px 28px rgba(4, 18, 45, 0.35));
 }
+
+/* Title: the outline + shadow now live inside the logo SVG (js/logo.js), so no
+   CSS filter on the <svg> — that filter is what drew the odd box around it. */
+body[data-screen="menu"] .logo-hero svg,
+body[data-screen="daily-intro"] .logo-hero svg { filter: none; }
+.logo-rim { stroke: rgba(255, 255, 255, 0.85); }

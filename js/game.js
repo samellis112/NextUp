@@ -465,6 +465,15 @@ function afterResolve(correct) {
       ui.next.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
     }
   }, 50);
+
+  // "Try one puzzle": go to the result on its own after a short look at the
+  // answer and rule — no button hunting on phones/tablets. Tapping
+  // "See results" still goes straight there.
+  if (game.mode === 'demo') {
+    const round = game;
+    ui.msg.textContent += ' · results in a moment…';
+    setTimeout(() => { if (game === round && game.answered) nextOrFinish(); }, 2500);
+  }
 }
 
 /* Direct-input puzzles (dots, number, calendar, schedule, bars). */

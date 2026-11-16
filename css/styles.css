@@ -2349,3 +2349,29 @@ body[data-screen="round"] #screen-round.active {
   .howto-box .howto-example .tile, .howto-opt { width: min(13vw, 54px); height: min(13vw, 54px); }
   .howto-box .howto-example, .howto-choices { flex-wrap: nowrap; }
 }
+
+/* ----- Phones: keep tappable buttons out of the bottom strip -----
+   Mobile Safari grabs taps in the bottom ~40px of the screen (to show its
+   toolbar), so a Next / See results button sitting there may not respond.
+   Leave that strip empty during a round (plus the home-indicator safe area). */
+@media (max-width: 560px) {
+  body[data-screen="round"] #screen-round.active { padding-bottom: calc(44px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 560px) and (max-height: 700px) {
+  body[data-screen="round"] #screen-round.active { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ----- Try-one-puzzle result: compact on phones so Play Again is close ----- */
+@media (max-width: 560px) {
+  #screen-results .results h2 { font-size: 24px; margin-bottom: 2px; }
+  #screen-results .results .big { font-size: 40px; margin: 2px 0; }
+  .results-grid.results-grid-2 { margin-bottom: 12px; }
+  .results-grid.results-grid-2 .result-stat { padding: 10px; }
+  .rule-note.demo-rule { margin-bottom: 12px; font-size: 13px; }
+  .demo-feedback { padding: 12px 12px 10px; margin-bottom: 14px; }
+  .fb-q { font-size: 14px; margin: 2px 0 8px; }
+  .fb-q:not(:first-child) { margin-top: 12px; }
+  .fb-num { min-height: 42px; font-size: 16px; }
+  .fb-send { margin-top: 12px; min-height: 42px; }
+  #screen-results { padding-bottom: calc(44px + env(safe-area-inset-bottom, 0px)); }
+}

@@ -1881,7 +1881,7 @@ body.sky-scene #screen-round #timer.round-timer { color: #0e2a52; text-shadow: 0
    Every puzzle piece is sized from the viewport (the smaller of a width share
    and a height share), so the puzzle grows to use a big monitor and shrinks to
    fit a phone, and the whole thing stays on one screen where it can. */
-.container:has(#screen-round.active) { max-width: 1500px; }
+.container:has(#screen-round.active) { max-width: 1125px; }
 
 /* figures always scale with their box */
 #screen-round .frame-tile svg, #screen-round .matrix .tile svg, #screen-round .combine-cell svg,
@@ -1890,51 +1890,51 @@ body.sky-scene #screen-round #timer.round-timer { color: #0e2a52; text-shadow: 0
 /* --- 1 2 3 4 → 5 sequence puzzles --- */
 #screen-round .frame-stack { gap: clamp(6px, 1.6vw, 22px); }
 #screen-round .sequence .tile.frame-tile {
-  width: min(21vw, 19vh, 260px);
-  height: min(21vw, 19vh, 260px);
+  width: min(15.8vw, 14.2vh, 195px);
+  height: min(15.8vw, 14.2vh, 195px);
 }
 #screen-round .panel .tile.answer-big {
-  width: min(74vw, 34vh, 520px);
-  height: min(74vw, 34vh, 520px);
+  width: min(55.5vw, 25.5vh, 390px);
+  height: min(55.5vw, 25.5vh, 390px);
 }
 #screen-round .answer-slot .slot-ph, #screen-round .tile.question .slot-ph { font-size: clamp(40px, 9vh, 96px); }
 #screen-round .choices { gap: clamp(6px, 1.2vw, 16px); }
 #screen-round .choice-opt {
-  width: min(17vw, 19vh, 240px);
-  height: min(17vw, 19vh, 240px);
+  width: min(12.8vw, 14.2vh, 180px);
+  height: min(12.8vw, 14.2vh, 180px);
 }
 /* number + word puzzles share the height with a keypad, so a smaller answer box */
 #screen-round .panel[data-family="number"] .tile.answer-big,
 #screen-round .panel[data-family="word"] .tile.answer-big {
-  width: min(56vw, 17vh, 240px);
-  height: min(56vw, 17vh, 240px);
+  width: min(42vw, 12.8vh, 180px);
+  height: min(42vw, 12.8vh, 180px);
 }
 #screen-round .slot-number { font-size: clamp(36px, 8vh, 84px); }
 
 /* keypad */
-#screen-round .bld-numpad { grid-template-columns: repeat(3, min(22vw, 5.8vh, 90px)); gap: clamp(5px, 0.8vh, 12px); }
-#screen-round .bld-key { min-height: min(22vw, 5.8vh, 90px); font-size: clamp(18px, 3.2vh, 32px); }
+#screen-round .bld-numpad { grid-template-columns: repeat(3, min(16.5vw, 4.3vh, 90px)); gap: clamp(5px, 0.8vh, 12px); }
+#screen-round .bld-key { min-height: min(16.5vw, 4.3vh, 90px); font-size: clamp(18px, 3.2vh, 32px); }
 
 /* --- 3×3 matrix puzzles --- */
 #screen-round .matrix { gap: clamp(6px, 1.2vh, 14px); margin-bottom: clamp(12px, 2vh, 28px); }
 #screen-round .matrix .tile {
-  width: min(27vw, 17vh, 230px);
-  height: min(27vw, 17vh, 230px);
+  width: min(20.2vw, 12.8vh, 172px);
+  height: min(20.2vw, 12.8vh, 172px);
 }
 
 /* a matrix you fill in yourself has no answer choices under it, so it can be bigger */
 #screen-round .panel:not(:has(.choices)) .matrix .tile {
-  width: min(27vw, 21vh, 280px);
-  height: min(27vw, 21vh, 280px);
+  width: min(20.2vw, 15.8vh, 210px);
+  height: min(20.2vw, 15.8vh, 210px);
 }
 
 /* --- A + B = ? rows --- */
-#screen-round .combine-cell { width: min(24vw, 19vh, 230px); height: min(24vw, 19vh, 230px); }
+#screen-round .combine-cell { width: min(18vw, 14.2vh, 172px); height: min(18vw, 14.2vh, 172px); }
 #screen-round .combine-op { font-size: clamp(18px, 4vh, 40px); width: auto; padding: 0 2px; }
 
 /* --- numbers-add-up grid --- */
 #screen-round .sumgrid {
-  --c: min(19vw, 7.6vh, 120px);
+  --c: min(14.2vw, 5.7vh, 90px);
   grid-template-columns: repeat(3, var(--c)) calc(var(--c) * 0.85);
   grid-auto-rows: var(--c);
   gap: clamp(5px, 1vh, 10px);
@@ -1943,21 +1943,21 @@ body.sky-scene #screen-round #timer.round-timer { color: #0e2a52; text-shadow: 0
 #screen-round .sum-tot { font-size: calc(var(--c) * 0.32); }
 
 /* --- calendar, week and bar puzzles --- */
-#screen-round .month-slot { max-width: min(94vw, 78vh, 760px); }
-#screen-round .m-day { min-height: clamp(40px, 7.4vh, 84px); font-size: clamp(13px, 2.4vh, 22px); border-radius: 8px; }
+#screen-round .month-slot { max-width: min(70.5vw, 58.5vh, 570px); }
+#screen-round .m-day { min-height: clamp(40px, 5.6vh, 84px); font-size: clamp(13px, 2.4vh, 22px); border-radius: 8px; }
 #screen-round .m-day .m-sym { font-size: clamp(11px, 2vh, 18px); }
 #screen-round .m-head { font-size: clamp(11px, 1.8vh, 16px); }
-#screen-round .week-row { width: min(94vw, 760px); }
+#screen-round .week-row { width: min(70.5vw, 570px); }
 #screen-round .week-row svg { width: 100%; }
-#screen-round .slot-day { min-height: clamp(52px, 9vh, 92px); font-size: clamp(11px, 2vh, 18px); }
-#screen-round .bars-slot { max-width: min(94vw, 640px); }
-#screen-round .bar-track { width: clamp(56px, 12vw, 120px); height: min(40vh, 420px); }
+#screen-round .slot-day { min-height: clamp(52px, 6.8vh, 92px); font-size: clamp(11px, 2vh, 18px); }
+#screen-round .bars-slot { max-width: min(70.5vw, 480px); }
+#screen-round .bar-track { width: clamp(56px, 9vw, 90px); height: min(30vh, 315px); }
 #screen-round .bar-val { font-size: clamp(15px, 3vh, 28px); }
 #screen-round .bar-label { font-size: clamp(12px, 2vh, 18px); }
 
 /* submit + reveal keep pace */
 #screen-round .bld-submit { font-size: clamp(15px, 2.4vh, 22px); padding: clamp(10px, 1.6vh, 18px) clamp(22px, 4vw, 44px); border-radius: 12px; }
-#screen-round .reveal .tile { width: min(40vw, 22vh, 240px); height: min(40vw, 22vh, 240px); }
+#screen-round .reveal .tile { width: min(30vw, 16.5vh, 180px); height: min(30vw, 16.5vh, 180px); }
 #screen-round .reveal .tile svg { width: 100%; height: 100%; }
 #screen-round .reveal .tile.week-tile { width: auto; height: auto; }
 #screen-round .reveal .tile.week-tile svg { width: auto; height: auto; max-width: 100%; }
@@ -1977,45 +1977,45 @@ body[data-screen="round"] .site-footer { display: none; }
   #screen-round .panel { padding-bottom: 40px; }
 
   /* sequences: 1 2 3 4 → 5 */
-  #screen-round .sequence .tile.frame-tile { width: min(18.9vw, 18.9vh, 280px); height: min(18.9vw, 18.9vh, 280px); }
-  #screen-round .panel .tile.answer-big { width: min(66.6vw, 34.2vh, 560px); height: min(66.6vw, 34.2vh, 560px); }
-  #screen-round .choice-opt { width: min(15.3vw, 18.9vh, 260px); height: min(15.3vw, 18.9vh, 260px); }
-  #screen-round .panel:has(.instruction:not([hidden])) .tile.answer-big { width: min(66.6vw, 28.8vh, 520px); height: min(66.6vw, 28.8vh, 520px); }
+  #screen-round .sequence .tile.frame-tile { width: min(14.2vw, 14.2vh, 210px); height: min(14.2vw, 14.2vh, 210px); }
+  #screen-round .panel .tile.answer-big { width: min(49.9vw, 25.7vh, 420px); height: min(49.9vw, 25.7vh, 420px); }
+  #screen-round .choice-opt { width: min(11.5vw, 14.2vh, 195px); height: min(11.5vw, 14.2vh, 195px); }
+  #screen-round .panel:has(.instruction:not([hidden])) .tile.answer-big { width: min(49.9vw, 21.6vh, 390px); height: min(49.9vw, 21.6vh, 390px); }
 
   /* number + word: answer box shares the height with the keypad */
   #screen-round .panel[data-family="number"] .tile.answer-big,
-  #screen-round .panel[data-family="word"] .tile.answer-big { width: min(50.4vw, 17.1vh, 260px); height: min(50.4vw, 17.1vh, 260px); }
-  #screen-round .bld-numpad { grid-template-columns: repeat(3, min(19.8vw, 5.9vh, 96px)); }
-  #screen-round .bld-key { min-height: min(19.8vw, 5.9vh, 96px); }
+  #screen-round .panel[data-family="word"] .tile.answer-big { width: min(37.8vw, 12.8vh, 195px); height: min(37.8vw, 12.8vh, 195px); }
+  #screen-round .bld-numpad { grid-template-columns: repeat(3, min(14.9vw, 4.4vh, 96px)); }
+  #screen-round .bld-key { min-height: min(14.9vw, 4.4vh, 96px); }
 
   /* 3×3 matrices */
-  #screen-round .matrix .tile { width: min(24.3vw, 17.1vh, 260px); height: min(24.3vw, 17.1vh, 260px); }
-  #screen-round .panel:not(:has(.choices)) .matrix .tile { width: min(24.3vw, 20.2vh, 300px); height: min(24.3vw, 20.2vh, 300px); }
+  #screen-round .matrix .tile { width: min(18.2vw, 12.8vh, 195px); height: min(18.2vw, 12.8vh, 195px); }
+  #screen-round .panel:not(:has(.choices)) .matrix .tile { width: min(18.2vw, 15.1vh, 225px); height: min(18.2vw, 15.1vh, 225px); }
 
   /* A + B = ? */
-  #screen-round .combine-cell { width: min(21.6vw, 18.4vh, 250px); height: min(21.6vw, 18.4vh, 250px); }
+  #screen-round .combine-cell { width: min(16.2vw, 13.8vh, 188px); height: min(16.2vw, 13.8vh, 188px); }
 
   /* numbers-add-up */
-  #screen-round .sumgrid { --c: min(17.1vw, 7.7vh, 130px); }
+  #screen-round .sumgrid { --c: min(12.8vw, 5.8vh, 98px); }
 
   /* calendar, week, bars */
-  #screen-round .month-slot { max-width: min(84.6vw, 77.4vh, 860px); }
-  #screen-round .m-day { min-height: clamp(44px, 7.7vh, 96px); }
-  #screen-round .week-row { width: min(84.6vw, 900px); }
-  #screen-round .slot-day { min-height: clamp(56px, 9vh, 104px); }
-  #screen-round .bar-track { width: clamp(64px, 11.7vw, 140px); height: min(41.4vh, 500px); }
+  #screen-round .month-slot { max-width: min(63.4vw, 58.1vh, 645px); }
+  #screen-round .m-day { min-height: clamp(44px, 5.8vh, 96px); }
+  #screen-round .week-row { width: min(63.4vw, 675px); }
+  #screen-round .slot-day { min-height: clamp(56px, 6.8vh, 78px); }
+  #screen-round .bar-track { width: clamp(64px, 8.8vw, 105px); height: min(31vh, 375px); }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 420px) {
   /* phones: the four frames and five choices already span the width, so the
      answer box takes the spare height instead */
-  #screen-round .sequence .tile.frame-tile { width: min(19.8vw, 11.7vh); height: min(19.8vw, 11.7vh); }
-  #screen-round .panel .tile.answer-big { width: min(77.4vw, 36vh); height: min(77.4vw, 36vh); }
-  #screen-round .panel:has(.instruction:not([hidden])) .tile.answer-big { width: min(77.4vw, 29.7vh); height: min(77.4vw, 29.7vh); }
+  #screen-round .sequence .tile.frame-tile { width: min(14.9vw, 8.8vh); height: min(14.9vw, 8.8vh); }
+  #screen-round .panel .tile.answer-big { width: min(58.1vw, 27vh); height: min(58.1vw, 27vh); }
+  #screen-round .panel:has(.instruction:not([hidden])) .tile.answer-big { width: min(58.1vw, 22.3vh); height: min(58.1vw, 22.3vh); }
   #screen-round .panel[data-family="number"] .tile.answer-big,
-  #screen-round .panel[data-family="word"] .tile.answer-big { width: min(50.4vw, 14.4vh); height: min(50.4vw, 14.4vh); }
-  #screen-round .matrix .tile { width: min(26.6vw, 14.4vh); height: min(26.6vw, 14.4vh); }
-  #screen-round .panel:not(:has(.choices)) .matrix .tile { width: min(26.6vw, 17.1vh); height: min(26.6vw, 17.1vh); }
+  #screen-round .panel[data-family="word"] .tile.answer-big { width: min(37.8vw, 10.8vh); height: min(37.8vw, 10.8vh); }
+  #screen-round .matrix .tile { width: min(20vw, 10.8vh); height: min(20vw, 10.8vh); }
+  #screen-round .panel:not(:has(.choices)) .matrix .tile { width: min(20vw, 12.8vh); height: min(20vw, 12.8vh); }
 }
 
 /* Short screens (laptops): text and the timer scale with the height too, and
@@ -2024,26 +2024,26 @@ body[data-screen="round"] .site-footer { display: none; }
 #screen-round .instr-item { font-size: clamp(16px, min(3.2vw, 2.3vh), 22px); margin-top: clamp(2px, 0.5vh, 6px); }
 #timer.round-timer { font-size: clamp(26px, min(5.4vw, 4vh), 40px); margin-bottom: clamp(8px, 1.4vh, 14px); }
 @media (min-width: 561px) {
-  #screen-round .combine-cell { width: min(21.6vw, 17.6vh, 250px); height: min(21.6vw, 17.6vh, 250px); }
-  #screen-round .panel:has(.instruction:not([hidden]) .instr-item) .tile.answer-big { width: min(66.6vw, 24.3vh, 480px); height: min(66.6vw, 24.3vh, 480px); }
-  #screen-round .panel:has(.instr-item) .m-day { min-height: clamp(40px, 6.7vh, 90px); }
-  #screen-round .week-row { width: min(84.6vw, 900px, 97.2vh); }
+  #screen-round .combine-cell { width: min(16.2vw, 13.2vh, 188px); height: min(16.2vw, 13.2vh, 188px); }
+  #screen-round .panel:has(.instruction:not([hidden]) .instr-item) .tile.answer-big { width: min(49.9vw, 18.2vh, 360px); height: min(49.9vw, 18.2vh, 360px); }
+  #screen-round .panel:has(.instr-item) .m-day { min-height: clamp(40px, 5vh, 90px); }
+  #screen-round .week-row { width: min(63.4vw, 675px, 72.9vh); }
 }
 @media (min-width: 561px) {
-  #screen-round .panel:has(.instr-item) .sequence .tile.frame-tile { width: min(18.9vw, 14.4vh, 240px); height: min(18.9vw, 14.4vh, 240px); }
+  #screen-round .panel:has(.instr-item) .sequence .tile.frame-tile { width: min(14.2vw, 10.8vh, 180px); height: min(14.2vw, 10.8vh, 180px); }
 }
 
 /* Tall phones: answer choices wrap to two rows (3 + 2) so they're big enough
    to tap comfortably; the answer box gives up a little height to make room. */
-@media (max-width: 560px) and (min-height: 740px) {
+@media (max-width: 420px) and (min-height: 555px) {
   #screen-round .choices { gap: 10px; }
-  #screen-round .choice-opt { width: min(25.2vw, 11.7vh); height: min(25.2vw, 11.7vh); }
-  #screen-round .panel:has(.choices) .tile.answer-big { width: min(77.4vw, 29.7vh); height: min(77.4vw, 29.7vh); }
+  #screen-round .choice-opt { width: min(18.9vw, 8.8vh); height: min(18.9vw, 8.8vh); }
+  #screen-round .panel:has(.choices) .tile.answer-big { width: min(58.1vw, 22.3vh); height: min(58.1vw, 22.3vh); }
 }
 /* Short phones: rules-heavy puzzles tighten up so the Submit button stays on screen. */
-@media (max-width: 560px) and (max-height: 700px) {
-  #screen-round .panel:has(.instruction:not([hidden]) .instr-item) .tile.answer-big { width: min(77.4vw, 25.2vh); height: min(77.4vw, 25.2vh); }
-  #screen-round .m-day { min-height: clamp(34px, 5.6vh, 60px); }
+@media (max-width: 420px) and (max-height: 525px) {
+  #screen-round .panel:has(.instruction:not([hidden]) .instr-item) .tile.answer-big { width: min(58.1vw, 18.9vh); height: min(58.1vw, 18.9vh); }
+  #screen-round .m-day { min-height: clamp(34px, 4.2vh, 60px); }
 }
 
 /* ----- Fit: the result area takes no room until there's something in it ----- */
@@ -2058,28 +2058,27 @@ body[data-screen="round"] .site-footer { display: none; }
 /* result line and the → button share one row, so the result takes less height */
 #screen-round .feedback { flex-direction: row; justify-content: center; align-items: center; gap: 16px; }
 
-/* ----- Result bar: once a puzzle is answered, the result, the rule and the →
-   button sit in a card pinned to the bottom of the window, so they're always
-   on screen whatever the puzzle's size. While solving it takes no room. */
-#screen-round .result-bar:has(#next:not([hidden])) {
-  position: fixed; z-index: 25;
-  left: 50%; bottom: 14px; transform: translateX(-50%);
-  width: min(680px, calc(100vw - 24px));
-  padding: 12px 16px;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  border: 1px solid var(--border); border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(8px);
-  animation: result-in 0.25s ease-out;
+
+/* Result + Next sit right under the puzzle, in the page (no pop-up card).
+   The bottom space for the round-status pill moves below them. */
+#screen-round .panel { padding-bottom: 0; }
+#screen-round .result-bar { padding-bottom: 90px; }
+@media (min-width: 561px) { #screen-round .result-bar { padding-bottom: 40px; } }
+#screen-round .result-bar .feedback { margin-top: clamp(10px, 2vh, 20px); }
+#screen-round .result-bar .rule-note { max-width: 640px; margin: 10px auto 0; }
+
+/* Correct answer marked on the puzzle after a miss */
+.m-day.m-answer, .slot-day.d-answer { box-shadow: inset 0 0 0 3px var(--correct); }
+.m-day.m-answer:not(.sel), .slot-day.d-answer:not(.sel) { background: color-mix(in srgb, var(--correct) 22%, #fff); color: #06231d; }
+.bar-track { position: relative; overflow: visible; }
+.bar-answer {
+  position: absolute; left: -6px; right: -6px; height: 0;
+  border-top: 3px dashed var(--correct);
 }
-@keyframes result-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translateX(-50%); } }
-#screen-round .result-bar:has(#next:not([hidden])) .feedback { margin: 0; justify-content: space-between; }
-#screen-round .result-bar:has(#next:not([hidden])) .msg { font-size: 17px; font-weight: 600; text-align: left; }
-#screen-round .result-bar:has(#next:not([hidden])) .rule-note { margin: 8px 0 0; background: none; border: none; padding: 0; text-align: left; font-size: 14px; }
-/* keep its text dark-on-panel even over the bright sky */
-body.sky-scene #screen-round .result-bar:has(#next:not([hidden])) :is(.msg, .rule-note) { text-shadow: none; }
-body.sky-scene #screen-round .result-bar:has(#next:not([hidden])) .msg.correct { color: var(--correct); }
-body.sky-scene #screen-round .result-bar:has(#next:not([hidden])) .msg.wrong { color: var(--muted); }
-/* the round-status pill moves up out of the way while the bar is showing */
-body:has(#screen-round .result-bar #next:not([hidden])) .corner-hud { bottom: auto; top: 14px; right: 74px; }
-@media (prefers-reduced-motion: reduce) { #screen-round .result-bar { animation: none !important; } }
+.bar-answer span {
+  position: absolute; right: -8px; top: -12px; transform: translateX(100%);
+  font-size: 13px; font-weight: 700; color: var(--correct);
+}
+.reveal-inline { text-align: center; color: var(--correct); }
+/* dot puzzles: the right cells get a green ring */
+.bld-cellhit.c-answer { box-shadow: inset 0 0 0 3px var(--correct) !important; border-radius: 50% !important; background: color-mix(in srgb, var(--correct) 18%, transparent); }

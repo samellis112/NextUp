@@ -467,7 +467,7 @@ function barsHtml(spec, st) {
     return `
       <div class="bar-col" data-bar="${i}">
         <div class="bar-val">${v}${spec.unit || ''}</div>
-        <div class="bar-track" data-track="${i}">
+        <div class="bar-track" data-track="${i}" data-max="${spec.max}">
           <div class="bar-fill" style="height:${pct}%"></div>
         </div>
         <div class="bar-label">${label}</div>

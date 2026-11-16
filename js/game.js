@@ -5,7 +5,7 @@ import './migrate.js'; // must stay first: renames saved data before anything re
 import { makeRng, rngHelpers } from './rng.js';
 import { renderPanel, panelEq } from './panels.js';
 import { generateProblem, generateNestedFinale, generateTrial } from './generators.js';
-import { renderBuilder } from './builder.js';
+import { renderBuilder } from './builder.js?v=46';
 import { shake, playSound, setStreakHeat, primeAudio, isMuted, setMuted, reducedMotion } from './feel.js';
 import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults, setScenes } from './levels.js?v=33';
 import {
@@ -441,17 +441,51 @@ function handleSubmit(built) {
   // Freeze the slot green/red; show the correct answer when they missed it.
   const slot = document.getElementById('answer-slot');
   if (slot) slot.classList.add('resolved', correct ? 'correct' : 'wrong');
-  const correctTile = (p) => (p.week || p.month || p.bars
-    ? `<div class="tile week-tile correct">${renderPanel(p, 300)}</div>`
-    : `<div class="tile correct">${renderPanel(p, 120)}</div>`);
-  ui.builder.innerHTML = correct ? '' : `
-    <div class="reveal">
-      <div class="reveal-item">
-        <div class="reveal-label">Answer</div>
-        ${correctTile(q.next)}
-      </div>
-    </div>`;
+  // Calendar, week and bar puzzles mark the right answer on the puzzle itself
+  // (no second full-size copy below, which would push Next off the screen).
+  if (!correct && slot && markAnswerInSlot(slot, q.next)) {
+    ui.builder.innerHTML = `<div class="reveal-label reveal-inline">Right answer shown in green</div>`;
+  } else {
+    ui.builder.innerHTML = correct ? '' : `
+      <div class="reveal">
+        <div class="reveal-item">
+          <div class="reveal-label">Answer</div>
+          <div class="tile correct">${renderPanel(q.next, 120)}</div>
+        </div>
+      </div>`;
+  }
   afterResolve(correct);
+}
+
+/* Highlight the correct answer inside a resolved calendar / week / bar slot.
+   Returns false for puzzle kinds it doesn't handle. */
+function markAnswerInSlot(slot, next) {
+  if (next.month) {
+    const marks = new Set(next.month.marks || []);
+    slot.querySelectorAll('[data-mday]').forEach(b => b.classList.toggle('m-answer', marks.has(+b.dataset.mday)));
+    return true;
+  }
+  if (next.week) {
+    slot.querySelectorAll('[data-day]').forEach(b => b.classList.toggle('d-answer', next.week.days[+b.dataset.day] === 'mark'));
+    return true;
+  }
+  if (next.cells && slot.querySelector('[data-cell]')) {
+    slot.querySelectorAll('[data-cell]').forEach(b => b.classList.toggle('c-answer', !!next.cells[+b.dataset.cell]));
+    return true;
+  }
+  if (next.bars) {
+    slot.querySelectorAll('.bar-track').forEach((t, i) => {
+      const cap = parseFloat(t.dataset.max || '0') || null;
+      const pct = cap ? next.bars[i] / cap * 100 : null;
+      const mark = document.createElement('div');
+      mark.className = 'bar-answer';
+      if (pct != null) mark.style.bottom = pct + '%';
+      mark.innerHTML = `<span>${next.bars[i]}</span>`;
+      t.appendChild(mark);
+    });
+    return true;
+  }
+  return false;
 }
 
 /* Pick-from-5 puzzles (shapes, nesting, pattern, matrix distribution). */

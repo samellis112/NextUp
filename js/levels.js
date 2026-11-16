@@ -3,7 +3,8 @@
    Every solved puzzle lifts you a level: the sky brightens and the specks
    behind the puzzle stream down past you (so you feel yourself rising). A
    missed puzzle sinks you a level: it dims and the specks run the other way.
-   A wrong try is a small slip. No bars or meters — just the movement.
+   A wrong try is a small slip. No bars or meters, and the specks are hidden
+   except while they move — the screen stays plain while you solve.
 
    Purely decorative: one fixed layer behind the page, built lazily, hidden
    outside rounds. Under prefers-reduced-motion only the colours change. */
@@ -32,9 +33,7 @@ function ensure() {
   root = document.createElement('div');
   root.className = 'lvl-bg';
   root.setAttribute('aria-hidden', 'true');
-  root.innerHTML = `
-    <div class="lvl-glow"></div>
-    <div class="lvl-specks"></div>`;
+  root.innerHTML = `<div class="lvl-specks"></div>`;
   document.body.prepend(root);
   return root;
 }
@@ -45,11 +44,21 @@ function paint() {
   const [top, bot] = (light ? SKY_LIGHT : SKY_DARK)[level];
   el.style.setProperty('--sky-top', top);
   el.style.setProperty('--sky-bot', bot);
-  el.querySelector('.lvl-glow').style.opacity = String(Math.max(0, (level - 2) / 3));
   if (reducedMotion()) return;
   // Three layers at different speeds: near specks move furthest (depth).
   el.querySelector('.lvl-specks').style.backgroundPosition =
     `40px ${travel}px, 20px ${travel * 0.55}px, 80px ${60 + travel * 0.3}px`;
+}
+
+/* The specks are only visible while they move, so the screen stays plain
+   while you're thinking and comes alive for a moment when the level changes. */
+let movingTimer = null;
+function showMovement() {
+  if (reducedMotion()) return;
+  const el = ensure();
+  el.classList.add('moving');
+  clearTimeout(movingTimer);
+  movingTimer = setTimeout(() => el.classList.remove('moving'), 1200);
 }
 
 /* Lift / drop the puzzle so the content moves with the level. (The panel, not
@@ -82,12 +91,14 @@ export function stepLevel(delta) {
   } else if (delta < 0) {
     travel -= 60; // already at the bottom: still feel the slip
   }
+  showMovement();
   paint();
 }
 
 /* A wrong try with tries left: a small slip backwards. */
 export function levelSlip() {
   travel -= 40;
+  showMovement();
   paint();
 }
 

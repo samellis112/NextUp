@@ -7,7 +7,7 @@ import { renderPanel, panelEq } from './panels.js';
 import { generateProblem, generateNestedFinale, generateTrial } from './generators.js';
 import { renderBuilder } from './builder.js';
 import { shake, playSound, setStreakHeat, primeAudio, isMuted, setMuted, reducedMotion } from './feel.js';
-import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults } from './levels.js';
+import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults } from './levels.js?v=12';
 import {
   DAILY_GEN_VERSION, DAILY_LENGTH, todayKey, dailyNumber, dailySeed,
   dailyRamp, msUntilTomorrow, formatCountdown, shareText,
@@ -113,49 +113,7 @@ function startPractice() {
   loadQuestion();
 }
 
-/* Warm-up for brand-new players: one very easy puzzle, untimed, unscored and
-   with unlimited tries. Runs once before a player's first daily. */
 const isNewPlayer = () => Object.keys(loadDaily().results).length === 0 && !loadDailyProgress();
-const needsTrial = () => !getFlag('trial-done') && isNewPlayer();
-
-function startTrial() {
-  game = {
-    mode: 'trial',
-    questions: [generateTrial(rngHelpers(makeRng('nextup-warmup')))],
-    idx: 0,
-    results: [],
-    answered: false,
-    heat: 0,
-    elapsedMs: 0,
-    startTs: 0,
-    timerId: null,
-  };
-  primeAudio();
-  setStreakHeat(0);
-  showLevels(levelFromResults(game.results)); // resumes part-way up on a resumed daily
-  showScreen('round');
-  loadQuestion();
-}
-
-function finishTrial() {
-  setFlag('trial-done');
-  game = null;
-  setStreakHeat(0);
-  hideLevels();
-  renderMenu();
-  if (getDailyResult(todayKey())) { showScreen('menu'); return; }
-  showDailyIntro();
-  openModal(`
-    <h3>You've got it!</h3>
-    <p>That's the whole idea. Today's challenge is <b>5 puzzles</b>. It's timed, and you get
-      <b>3 tries</b> on each one.</p>
-    <div class="modal-actions">
-      <button class="primary" id="modal-trial-go">Start today's puzzles</button>
-      <button id="modal-trial-later">Not yet</button>
-    </div>`);
-  document.getElementById('modal-trial-go').addEventListener('click', () => { closeModal(); startDaily(); });
-  document.getElementById('modal-trial-later').addEventListener('click', closeModal);
-}
 
 /* "Try the game": one random puzzle, then a result with Play Again. Meant for
    handing to someone new (also reachable directly with ?try in the link).
@@ -277,9 +235,7 @@ function loadQuestion() {
   const q = currentQuestion();
   const n = totalLength();
 
-  const trial = game.mode === 'trial';
-  document.getElementById('screen-round').classList.toggle('is-trial', trial);
-  ui.problemNum.textContent = trial ? 'Warm-up' : game.mode === 'demo' ? 'Try it' : `${game.idx + 1}/${n}`;
+  ui.problemNum.textContent = game.mode === 'demo' ? 'Try it' : `${game.idx + 1}/${n}`;
   ui.progress.style.width = (game.idx / n * 100) + '%';
   ui.msg.textContent = '';
   ui.msg.className = 'msg';
@@ -427,12 +383,9 @@ const totalSolved = results => results.filter(r => r.solved).length;
    the question is now resolved (solved or out of tries). */
 function registerTry(correct) {
   game.tries++;
-  const trial = game.mode === 'trial'; // the warm-up never runs out of tries
-  if (!correct && (trial || game.tries < MAX_TRIES)) {
+  if (!correct && game.tries < MAX_TRIES) {
     const left = MAX_TRIES - game.tries;
-    ui.msg.textContent = trial
-      ? 'Not quite — look at the pattern again and have another go.'
-      : `Not quite — ${left} ${left === 1 ? 'try' : 'tries'} left.`;
+    ui.msg.textContent = `Not quite — ${left} ${left === 1 ? 'try' : 'tries'} left.`;
     ui.msg.className = 'msg wrong';
     shake(ui.panel);
     playSound('wrong');
@@ -459,11 +412,9 @@ function afterResolve(correct) {
   game.results.push({ solved: correct, tries: game.tries, timeMs: Math.round(elapsed) });
   const q = currentQuestion();
 
-  ui.msg.textContent = game.mode === 'trial'
-    ? 'That’s it — you spotted the rule!'
-    : correct
-      ? `Correct${game.tries > 1 ? ` on try ${game.tries}` : ''} · ${(elapsed / 1000).toFixed(1)}s`
-      : 'Out of tries';
+  ui.msg.textContent = correct
+    ? `Correct${game.tries > 1 ? ` on try ${game.tries}` : ''} · ${(elapsed / 1000).toFixed(1)}s`
+    : 'Out of tries';
   ui.msg.className = 'msg ' + (correct ? 'correct' : 'wrong');
   if (q.rule) { ui.rule.innerHTML = `<b>Rule:</b> ${esc(q.rule)}`; ui.rule.hidden = false; }
   ui.progress.style.width = ((game.idx + 1) / totalLength() * 100) + '%';
@@ -538,7 +489,6 @@ function nextOrFinish() {
 }
 
 function finishRound() {
-  if (game.mode === 'trial') { finishTrial(); return; }
   if (game.mode === 'demo') {
     const r = game.results[0], q = game.questions[0];
     game = null;
@@ -856,18 +806,24 @@ function openHistory() {
 
 function howToPlay() {
   setFlag('howto-seen');
-  const dot = fill => ({ center: { kind: 'circle', fill } });
-  const example = [dot('solid'), dot('outline'), dot('solid'), dot('outline')];
-  const tile = (p, cls = '') => `<div class="tile${cls}">${renderPanel(p, 56)}</div>`;
+  // The practice puzzle lives INSIDE the popup, so nobody mistakes it for the
+  // real game: no timer, no score, as many taps as they like.
+  const q = generateTrial(rngHelpers(makeRng('nextup-warmup')));
+  const tile = (p, cls = '') => `<div class="tile${cls}">${renderPanel(p, 72)}</div>`;
   openModal(`
     <h3>How to play</h3>
     <p class="howto-lead">Every puzzle is a pattern. Work out <b>what comes next</b>.</p>
-    <div class="howto-example">
-      ${example.map(p => tile(p)).join('')}
-      <div class="tile question howto-q">?</div>
-    </div>
-    <div class="howto-answer">
-      <span>Black, white, black, white… so next is</span>${tile(dot('solid'), ' correct')}
+    <div class="howto-practice">
+      <div class="howto-tag">Practice — this one doesn't count</div>
+      <div class="howto-example">
+        ${q.frames.map(p => tile(p)).join('')}
+        <div class="tile question howto-q" id="howto-slot">?</div>
+      </div>
+      <div class="howto-prompt" id="howto-prompt">Tap the one that comes next:</div>
+      <div class="howto-choices">
+        ${q.choice.options.map((p, i) =>
+          `<button type="button" class="howto-opt" data-i="${i}" aria-label="Option ${i + 1}">${renderPanel(p, 72)}</button>`).join('')}
+      </div>
     </div>
     <ol class="howto-steps">
       <li><b>Spot the rule</b> in the numbered boxes.</li>
@@ -875,10 +831,27 @@ function howToPlay() {
       <li><b>3 tries</b> per puzzle. <b>5 puzzles</b> a day, the same for everyone.</li>
     </ol>
     <div class="modal-actions">
-      <button class="primary" id="modal-howto-try">Try a warm-up puzzle</button>
-      <button id="modal-howto-close">Got it</button>
-    </div>`);
-  document.getElementById('modal-howto-try').addEventListener('click', () => { closeModal(); startTrial(); });
+      <button class="primary" id="modal-howto-close">Got it</button>
+    </div>`, 'howto-box');
+  const prompt = document.getElementById('howto-prompt');
+  const opts = [...document.querySelectorAll('.howto-opt')];
+  opts.forEach(btn => btn.addEventListener('click', () => {
+    const i = parseInt(btn.dataset.i, 10);
+    if (i !== q.choice.answerIndex) {
+      btn.classList.add('opt-wrong');
+      btn.disabled = true;
+      prompt.textContent = 'Not quite — look at the pattern and try another.';
+      prompt.className = 'howto-prompt wrong';
+      return;
+    }
+    opts.forEach(o => { o.disabled = true; });
+    btn.classList.add('opt-correct');
+    const slot = document.getElementById('howto-slot');
+    slot.innerHTML = renderPanel(q.choice.options[i], 72);
+    slot.classList.add('solved');
+    prompt.textContent = 'That’s it! The fill flips every time. The real puzzles work the same way.';
+    prompt.className = 'howto-prompt correct';
+  }));
   document.getElementById('modal-howto-close').addEventListener('click', closeModal);
 }
 
@@ -932,7 +905,7 @@ function goDaily() {
 
 document.getElementById('btn-start-daily').addEventListener('click', () => {
   primeAudio();
-  if (needsTrial()) startTrial(); else startDaily(); // new players get one warm-up first
+  startDaily();
 });
 document.getElementById('btn-intro-leaderboard').addEventListener('click', openLeaderboard);
 document.getElementById('btn-intro-menu').addEventListener('click', () => { renderMenu(); showScreen('menu'); });

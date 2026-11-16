@@ -729,12 +729,10 @@ export function generateNestedFinale(R) {
   return packQuestion(genNestedShape(R, pick[1], pick[0]), 'hard', R);
 }
 
-/* The warm-up shown to brand-new players: one shape whose fill simply flips
-   every panel. Untimed and unscored (game.js runs it in 'trial' mode). */
+/* The practice puzzle inside the How-to-play popup: one shape whose fill simply
+   flips every panel. Never timed or scored (see howToPlay in game.js). */
 export function generateTrial(R) {
-  const q = genAlternation(R, 1);
-  q.instruction = 'Warm-up — not timed, not scored. What comes next? Tap the answer below.';
-  return packQuestion(q, 'easy', R);
+  return packQuestion(genAlternation(R, 1), 'easy', R);
 }
 
 export function generateProblem(R, difficulty) {

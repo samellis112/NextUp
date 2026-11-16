@@ -32,8 +32,10 @@ export function activeScreen() {
   return null;
 }
 
-export function openModal(html) {
-  document.getElementById('modal-box').innerHTML = html;
+export function openModal(html, variant = '') {
+  const box = document.getElementById('modal-box');
+  box.className = 'modal-box' + (variant ? ' ' + variant : '');
+  box.innerHTML = html;
   document.getElementById('modal-overlay').classList.add('active');
 }
 

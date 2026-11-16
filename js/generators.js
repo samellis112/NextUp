@@ -241,11 +241,13 @@ function genMatrixLatin(R, level) {
   };
 }
 
-/* Quantitative pairwise progression: dot count climbs across each row. */
+/* Dot-count grid: the count climbs by one across every row AND by a fixed
+   step down every column, so the missing 9th box follows from its row and its
+   column alike. Every box shows its 3x3 cell lines so positions are readable. */
 function genMatrixRowCount(R, level) {
   const base = 1 + R.int(2);
-  const d1 = 1 + R.int(2);
-  const rowStart = [base, base + d1, base + d1 + 1 + R.int(2)];
+  const down = 1 + R.int(2);              // step down each column (1 or 2)
+  const rowStart = [base, base + down, base + 2 * down]; // max count = 2 + 4 + 2 = 8
   const color = level >= 3 ? R.pick(['blue', 'green', 'red']) : 'solid';
   const dotToken = { kind: 'circle', fill: color, scale: 0.8 };
   // Randomized ring orientation: the fill can start at any corner and run
@@ -255,13 +257,14 @@ function genMatrixRowCount(R, level) {
     const n = rowStart[r] + c;
     const cells = Array(9).fill(null);
     for (let k = 0; k < n && k < 8; k++) cells[ring[k]] = { ...dotToken };
-    return { cells };
+    return { grid3: true, cells };
   };
   const { frames, next } = matrixFrames(cellAt);
   return {
     type: 'matrix', frames, next,
-    rule: 'In every row the dot count rises by one from left to right; dots fill around the ring in the same order every cell.',
-    answerSpec: { kind: 'dots', dotToken, grid3: false, cellPositions: BORDER8.slice() },
+    rule: `Each box has one more dot than the box to its left, and ${down === 1 ? 'one' : 'two'} more than the box above it. `
+      + 'New dots are always added around the edge in the same order.',
+    answerSpec: { kind: 'dots', dotToken, grid3: true, cellPositions: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
   };
 }
 
@@ -724,6 +727,14 @@ export function generateNestedFinale(R) {
     ['square', 4], ['circle', 4],
   ]);
   return packQuestion(genNestedShape(R, pick[1], pick[0]), 'hard', R);
+}
+
+/* The warm-up shown to brand-new players: one shape whose fill simply flips
+   every panel. Untimed and unscored (game.js runs it in 'trial' mode). */
+export function generateTrial(R) {
+  const q = genAlternation(R, 1);
+  q.instruction = 'Warm-up — not timed, not scored. What comes next? Tap the answer below.';
+  return packQuestion(q, 'easy', R);
 }
 
 export function generateProblem(R, difficulty) {

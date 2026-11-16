@@ -34,8 +34,7 @@
       <h1 class="logo-hero" aria-label="Next Up"></h1>
       <div class="subtitle" id="intro-title">Daily Challenge</div>
       <p class="intro-note" id="intro-sub">5 puzzles · 3 tries each · the same for everyone</p>
-      <p class="intro-note">Spot each hidden rule and build the answer right inside the puzzle.
-        A wrong try keeps your work so you can adjust.</p>
+      <p class="intro-note">Spot the pattern, then fill in the “?”.</p>
       <button class="go-btn" id="btn-start-daily">
         <span class="go-word">START</span>
         <span class="sub-note">your time begins when you press</span>
@@ -45,6 +44,7 @@
         <span aria-hidden="true">·</span>
         <button class="menu-link" id="btn-intro-howto">How to play</button>
       </div>
+      <button class="leaderboard-big" id="btn-intro-leaderboard">🏆 Leaderboard</button>
     </div>
 
     <!-- ============ MAIN MENU ============ -->
@@ -58,7 +58,9 @@
         <span class="sub-note" id="go-note">Play today's challenge</span>
       </button>
 
-      <div class="menu-divider">More</div>
+      <button class="leaderboard-big" id="btn-leaderboard">🏆 Leaderboard</button>
+
+      <div class="menu-divider">Practice</div>
       <div class="diff-row" id="diff-row" role="group" aria-label="Practice difficulty">
         <button data-diff="easy">Easy</button>
         <button data-diff="medium" class="active">Medium</button>
@@ -66,7 +68,6 @@
       </div>
       <div class="menu-actions">
         <button id="btn-practice">Practice Round</button>
-        <button id="btn-leaderboard">Leaderboard</button>
       </div>
       <div class="menu-links">
         <button class="menu-link" id="btn-stats">My Stats</button>

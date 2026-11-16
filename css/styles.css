@@ -1351,3 +1351,198 @@ svg { display: block; }
 .logo-hero svg { width: 100%; height: auto; display: block; overflow: visible; }
 .logo-hero.replayable { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* ============================================================
+   Layout + clarity pass
+   ============================================================ */
+
+/* ----- Everything in a round is centred on the page ----- */
+#screen-round .panel { text-align: center; }
+.matrix { justify-content: center; }
+.panel[data-family]::before { display: block; width: fit-content; margin: 0 auto 12px; }
+.instruction, .rule-note { max-width: 640px; margin-left: auto; margin-right: auto; text-align: center; }
+.instruction { font-size: 14px; line-height: 1.5; }
+.feedback { flex-direction: column; justify-content: center; }
+#next { margin-left: 0; }
+.stats-screen, .history, .leaderboard { text-align: center; }
+.history-actions { justify-content: center; }
+.lb-tabs { justify-content: center; }
+.history-row, .dist, .group-item { text-align: left; }
+
+/* ----- Frame numbers: 1–4 clearly readable, the answer's 5 the biggest ----- */
+.frame-chip {
+  top: -12px;
+  left: -12px;
+  width: 30px;
+  height: 30px;
+  background: var(--secondary);
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.answer-wrap .chip-answer {
+  top: -18px;
+  left: -18px;
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.frame-stack { padding-top: 12px; } /* room for the chips above the tiles */
+@media (max-width: 560px) {
+  .frame-chip { width: 26px; height: 26px; font-size: 14px; top: -10px; left: -8px; }
+  .answer-wrap .chip-answer { width: 38px; height: 38px; font-size: 21px; top: -14px; left: -12px; }
+}
+
+/* ----- Warm-up puzzle: no clock ----- */
+#screen-round.is-trial .hud-time { display: none; }
+
+/* ----- Big Share + Leaderboard buttons ----- */
+.results-cta { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 0 auto 20px; }
+.share-big, .leaderboard-big {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s ease-out, background 0.15s;
+}
+.share-big {
+  padding: 24px 20px;
+  border-radius: 18px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 5px 0 0 var(--accent-shadow);
+}
+.share-big:hover { background: var(--accent-hover); transform: translateY(-2px); }
+.share-big:active { transform: translateY(4px); box-shadow: 0 1px 0 0 var(--accent-shadow); }
+.leaderboard-big {
+  margin: 14px auto 0;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: var(--secondary);
+  color: var(--on-secondary);
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 4px 0 0 var(--secondary-shadow);
+}
+.results-cta .leaderboard-big { margin: 0; }
+.leaderboard-big:hover { background: var(--secondary-hover); transform: translateY(-2px); }
+.leaderboard-big:active { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--secondary-shadow); }
+@media (prefers-reduced-motion: reduce) {
+  .share-big, .leaderboard-big, .share-big:hover, .leaderboard-big:hover { transition: none; transform: none; }
+}
+
+/* ----- How to play popup ----- */
+.modal-box p.howto-lead { font-size: 16px; color: var(--text); margin-bottom: 4px; }
+.howto-example .tile.howto-q { font-size: 26px; border-color: var(--accent); color: var(--accent-text); }
+.howto-answer {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: 14px; color: var(--muted); margin-bottom: 16px;
+}
+.howto-answer .tile { width: 56px; height: 56px; }
+.howto-steps {
+  text-align: left; margin: 0 0 20px; padding-left: 22px;
+  font-size: 14px; line-height: 1.5; color: var(--muted);
+}
+.howto-steps li { margin-bottom: 6px; }
+.howto-steps b { color: var(--text); }
+
+/* ----- The answer box is white like every other box -----
+   Figures are drawn in black ink, so on the dark theme a dark answer box made
+   placed dots, typed numbers and picked shapes invisible. The dashed orange
+   border (not the fill) is what marks it as the box to fill in. */
+#screen-round .tile.question { background: #fff; border-color: var(--accent); color: #946000; }
+#screen-round .answer-slot .slot-ph, #screen-round .tile.question .slot-ph { color: #946000; }
+#screen-round .answer-slot:not(.resolved) .bld-cellhit:not(.disabled) {
+  box-shadow: inset 0 0 0 1px rgba(14, 26, 46, 0.22);
+}
+
+/* Calendar + bar puzzles: the board itself is the answer area, so it fills its
+   slot (no shrunken board floating inside a wide dashed frame). */
+.month-slot.answer-slot, .bars-slot.answer-slot { border: none; }
+.month-slot .slot-canvas, .bars-slot .slot-canvas { display: block; }
+.instruction { line-height: 1.7; }
+
+/* ============================================================
+   Changing-levels background (js/levels.js)
+   ============================================================ */
+@property --sky-top { syntax: '<color>'; inherits: true; initial-value: #070c17; }
+@property --sky-bot { syntax: '<color>'; inherits: true; initial-value: #0b1424; }
+
+.lvl-bg {
+  --lvl-ink: 255, 255, 255;
+  --lvl-rail-w: clamp(14px, 4.5vw, 60px);
+  --lvl-move: 1100ms cubic-bezier(.16, .84, .3, 1);
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(to top, var(--sky-bot), var(--sky-top));
+  transition: opacity 0.5s ease, --sky-top 1.1s ease, --sky-bot 1.1s ease;
+}
+.lvl-bg.on { opacity: 1; }
+@media (prefers-color-scheme: light) { .lvl-bg { --lvl-ink: 2, 64, 137; } }
+
+/* warm light that swells from below near the top levels */
+.lvl-glow {
+  position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease;
+  background: radial-gradient(ellipse 80% 55% at 50% 108%, rgba(253, 163, 0, 0.5), transparent 70%);
+}
+/* faint specks drifting down as you rise (slower than the bars = depth) */
+.lvl-specks {
+  position: absolute; inset: 0; opacity: 0.5;
+  background-image:
+    radial-gradient(circle, rgba(var(--lvl-ink), 0.55) 1.2px, transparent 1.6px),
+    radial-gradient(circle, rgba(var(--lvl-ink), 0.35) 1px, transparent 1.4px);
+  background-size: 190px 170px, 130px 210px;
+  background-position: 20px 0, 80px 60px;
+  transition: background-position var(--lvl-move);
+}
+/* the two side bars: the fill is your level, the bands slide past as you move */
+.lvl-rail {
+  position: absolute; top: 0; bottom: 0; width: var(--lvl-rail-w);
+  border-left: 1px solid rgba(var(--lvl-ink), 0.14);
+  border-right: 1px solid rgba(var(--lvl-ink), 0.14);
+  background: rgba(var(--lvl-ink), 0.04);
+  overflow: hidden;
+}
+.lvl-rail.left  { left:  max(0px, calc(50% - 560px)); }
+.lvl-rail.right { right: max(0px, calc(50% - 560px)); }
+.lvl-fill {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 0%;
+  background: linear-gradient(to top, rgba(253, 163, 0, 0.55), rgba(253, 163, 0, 0.12));
+  box-shadow: 0 -2px 18px rgba(253, 163, 0, 0.6);
+  border-top: 2px solid var(--accent);
+  transition: height var(--lvl-move);
+}
+.lvl-bands {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(to bottom,
+    transparent 0, transparent 34%,
+    rgba(var(--lvl-ink), 0.16) 34%, rgba(var(--lvl-ink), 0.16) 46%,
+    transparent 46%, transparent 100%);
+  background-size: 100% 46px;
+  transition: background-position var(--lvl-move);
+}
+
+@keyframes lvl-rise { 0% { transform: translateY(0); } 35% { transform: translateY(-14px); } 100% { transform: translateY(0); } }
+@keyframes lvl-drop {
+  0% { transform: translateY(0); filter: brightness(1); }
+  30% { transform: translateY(20px); filter: brightness(0.72); }
+  100% { transform: translateY(0); filter: brightness(1); }
+}
+#screen-round .panel.lvl-rise { animation: lvl-rise 0.9s cubic-bezier(.2, .8, .3, 1); }
+#screen-round .panel.lvl-drop { animation: lvl-drop 1s cubic-bezier(.3, 0, .3, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lvl-specks, .lvl-bands, .lvl-fill { transition: none; }
+  #screen-round .panel.lvl-rise, #screen-round .panel.lvl-drop { animation: none; }
+}

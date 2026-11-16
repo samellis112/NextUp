@@ -7,6 +7,12 @@
       "runtimeArgs": ["serve", "."],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "python-serve",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-I", "-c", "import http.server,functools,os; H=functools.partial(http.server.SimpleHTTPRequestHandler, directory='/private/tmp/claude-501/-Users-calebtaylor--claude-spares-spare-a7z6Af/f986d5bf-f0a3-4fdc-9a05-05efc23c0cb0/scratchpad/site'); http.server.ThreadingHTTPServer(('127.0.0.1',int(os.environ.get('PORT',3000))),H).serve_forever()"],
+      "port": 3000
     }
   ]
 }

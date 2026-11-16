@@ -4,16 +4,17 @@
 import './migrate.js'; // must stay first: renames saved data before anything reads it
 import { makeRng, rngHelpers } from './rng.js';
 import { renderPanel, panelEq } from './panels.js';
-import { generateProblem, generateNestedFinale } from './generators.js';
+import { generateProblem, generateNestedFinale, generateTrial } from './generators.js';
 import { renderBuilder } from './builder.js';
 import { shake, playSound, setStreakHeat, primeAudio, isMuted, setMuted, reducedMotion } from './feel.js';
+import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults } from './levels.js';
 import {
   DAILY_GEN_VERSION, DAILY_LENGTH, todayKey, dailyNumber, dailySeed,
   dailyRamp, msUntilTomorrow, formatCountdown, shareText,
 } from './daily.js';
 import {
   loadHistory, saveHistoryEntry, getDailyResult, saveDailyResult,
-  computeStreaks, loadDaily, getPendingJoin,
+  computeStreaks, loadDaily, getPendingJoin, getFlag, setFlag,
 } from './storage.js';
 import { esc, registerScreens, showScreen, activeScreen, openModal, closeModal } from './ui.js';
 import {
@@ -88,6 +89,7 @@ function startDaily() {
   };
   primeAudio();
   setStreakHeat(0);
+  showLevels(levelFromResults(game.results)); // resumes part-way up on a resumed daily
   showScreen('round');
   loadQuestion();
 }
@@ -106,14 +108,61 @@ function startPractice() {
   };
   primeAudio();
   setStreakHeat(0);
+  showLevels(levelFromResults(game.results)); // resumes part-way up on a resumed daily
   showScreen('round');
   loadQuestion();
 }
 
-function totalLength() { return game.mode === 'daily' ? DAILY_LENGTH : PRACTICE_LENGTH; }
+/* Warm-up for brand-new players: one very easy puzzle, untimed, unscored and
+   with unlimited tries. Runs once before a player's first daily. */
+const isNewPlayer = () => Object.keys(loadDaily().results).length === 0 && !loadDailyProgress();
+const needsTrial = () => !getFlag('trial-done') && isNewPlayer();
+
+function startTrial() {
+  game = {
+    mode: 'trial',
+    questions: [generateTrial(rngHelpers(makeRng('nextup-warmup')))],
+    idx: 0,
+    results: [],
+    answered: false,
+    heat: 0,
+    elapsedMs: 0,
+    startTs: 0,
+    timerId: null,
+  };
+  primeAudio();
+  setStreakHeat(0);
+  showLevels(levelFromResults(game.results)); // resumes part-way up on a resumed daily
+  showScreen('round');
+  loadQuestion();
+}
+
+function finishTrial() {
+  setFlag('trial-done');
+  game = null;
+  setStreakHeat(0);
+  hideLevels();
+  renderMenu();
+  if (getDailyResult(todayKey())) { showScreen('menu'); return; }
+  showDailyIntro();
+  openModal(`
+    <h3>You've got it!</h3>
+    <p>That's the whole idea. Today's challenge is <b>5 puzzles</b>. It's timed, and you get
+      <b>3 tries</b> on each one.</p>
+    <div class="modal-actions">
+      <button class="primary" id="modal-trial-go">Start today's puzzles</button>
+      <button id="modal-trial-later">Not yet</button>
+    </div>`);
+  document.getElementById('modal-trial-go').addEventListener('click', () => { closeModal(); startDaily(); });
+  document.getElementById('modal-trial-later').addEventListener('click', closeModal);
+}
+
+function totalLength() {
+  return game.mode === 'daily' ? DAILY_LENGTH : game.mode === 'trial' ? 1 : PRACTICE_LENGTH;
+}
 
 function currentQuestion() {
-  if (game.mode === 'daily') return game.questions[game.idx];
+  if (game.questions) return game.questions[game.idx];
   if (!game.currentQ) {
     game.currentQ = generateProblem(rngHelpers(makeRng(null)), practiceDifficulty);
   }
@@ -127,7 +176,9 @@ function loadQuestion() {
   const q = currentQuestion();
   const n = totalLength();
 
-  ui.problemNum.textContent = `${game.idx + 1}/${n}`;
+  const trial = game.mode === 'trial';
+  document.getElementById('screen-round').classList.toggle('is-trial', trial);
+  ui.problemNum.textContent = trial ? 'Warm-up' : `${game.idx + 1}/${n}`;
   ui.progress.style.width = (game.idx / n * 100) + '%';
   ui.msg.textContent = '';
   ui.msg.className = 'msg';
@@ -218,7 +269,8 @@ function loadQuestion() {
   // puzzles carry none (the frames + "?" + → say it all).
   const instr = document.getElementById('instruction');
   instr.hidden = !q.instruction;
-  instr.textContent = q.instruction || '';
+  // Numbered requirements (①②③) each get their own line so they're easy to scan.
+  instr.innerHTML = esc(q.instruction || '').replace(/ (?=[①②③])/g, '<br>');
 
   if (isMC) {
     renderChoices(q);
@@ -274,12 +326,16 @@ const totalSolved = results => results.filter(r => r.solved).length;
    the question is now resolved (solved or out of tries). */
 function registerTry(correct) {
   game.tries++;
-  if (!correct && game.tries < MAX_TRIES) {
+  const trial = game.mode === 'trial'; // the warm-up never runs out of tries
+  if (!correct && (trial || game.tries < MAX_TRIES)) {
     const left = MAX_TRIES - game.tries;
-    ui.msg.textContent = `Not quite — ${left} ${left === 1 ? 'try' : 'tries'} left.`;
+    ui.msg.textContent = trial
+      ? 'Not quite — look at the pattern again and have another go.'
+      : `Not quite — ${left} ${left === 1 ? 'try' : 'tries'} left.`;
     ui.msg.className = 'msg wrong';
     shake(ui.panel);
     playSound('wrong');
+    levelSlip();
     return false;
   }
   game.answered = true;
@@ -292,6 +348,7 @@ function registerTry(correct) {
     playSound('wrong');
   }
   setStreakHeat(game.heat);
+  stepLevel(correct ? 1 : -1); // climb on a solve, sink on a miss
   return true;
 }
 
@@ -301,9 +358,11 @@ function afterResolve(correct) {
   game.results.push({ solved: correct, tries: game.tries, timeMs: Math.round(elapsed) });
   const q = currentQuestion();
 
-  ui.msg.textContent = correct
-    ? `Correct${game.tries > 1 ? ` on try ${game.tries}` : ''} · ${(elapsed / 1000).toFixed(1)}s`
-    : 'Out of tries';
+  ui.msg.textContent = game.mode === 'trial'
+    ? 'That’s it — you spotted the rule!'
+    : correct
+      ? `Correct${game.tries > 1 ? ` on try ${game.tries}` : ''} · ${(elapsed / 1000).toFixed(1)}s`
+      : 'Out of tries';
   ui.msg.className = 'msg ' + (correct ? 'correct' : 'wrong');
   if (q.rule) { ui.rule.innerHTML = `<b>Rule:</b> ${esc(q.rule)}`; ui.rule.hidden = false; }
   ui.progress.style.width = ((game.idx + 1) / totalLength() * 100) + '%';
@@ -378,12 +437,14 @@ function nextOrFinish() {
 }
 
 function finishRound() {
+  if (game.mode === 'trial') { finishTrial(); return; }
   const results = game.results;
   const totalMs = results.reduce((s, r) => s + r.timeMs, 0);
   const solved = totalSolved(results);
   const attempts = totalAttempts(results);
   playSound('round');
   setStreakHeat(0);
+  hideLevels();
 
   if (game.mode === 'daily') {
     const entry = {
@@ -489,8 +550,11 @@ function showDailyResults(entry) {
 
     <div class="countdown-note">Next puzzle in <b id="countdown">--:--:--</b></div>
 
+    <div class="results-cta">
+      <button class="share-big" id="btn-share">Share your result</button>
+      <button class="leaderboard-big" id="btn-results-leaderboard">🏆 See the leaderboard</button>
+    </div>
     <div class="results-actions">
-      <button class="next" id="btn-share">Share</button>
       <button class="back-link" id="btn-results-stats">My Stats</button>
       <button class="back-link" id="btn-results-menu2">Main Menu</button>
     </div>`;
@@ -498,6 +562,7 @@ function showDailyResults(entry) {
   countUp(document.getElementById('results-big'), entry.score, `/${entry.total}`);
 
   document.getElementById('btn-share').addEventListener('click', () => shareDaily(entry, streaks.current));
+  document.getElementById('btn-results-leaderboard').addEventListener('click', () => { stopCountdown(); openLeaderboard(); });
   document.getElementById('btn-results-stats').addEventListener('click', openStats);
   document.getElementById('btn-results-menu2').addEventListener('click', () => { renderMenu(); showScreen('menu'); });
   const signinBtn = document.getElementById('btn-results-signin');
@@ -522,7 +587,7 @@ async function shareDaily(entry, streak) {
   }
   try {
     await navigator.clipboard.writeText(text);
-    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share'; }, 1500); }
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share your result'; }, 1500); }
   } catch {
     openModal(`<h3>Share your result</h3><p style="white-space:pre-line; color:var(--text);">${esc(text)}</p>
       <div class="modal-actions"><button class="primary" id="modal-ok">Close</button></div>`);
@@ -667,44 +732,32 @@ function openHistory() {
 
 /* ---------- How to play ---------- */
 
-function howToPlay(fromBoot) {
-  const example = [
-    { center: { kind: 'circle', fill: 'solid' } },
-    { center: { kind: 'circle', fill: 'outline' } },
-    { center: { kind: 'circle', fill: 'solid' } },
-    { center: { kind: 'circle', fill: 'outline' } },
-  ];
-  const nestedMini = {
-    nested: {
-      outer: [{ color: 'blue' }, { color: 'orange' }, { color: 'green' }, { color: 'red' }],
-      inner: [{ color: 'red', texture: 'stripes' }, { color: 'red', texture: 'stripes' }, null, null],
-    },
-  };
+function howToPlay() {
+  setFlag('howto-seen');
+  const dot = fill => ({ center: { kind: 'circle', fill } });
+  const example = [dot('solid'), dot('outline'), dot('solid'), dot('outline')];
+  const tile = (p, cls = '') => `<div class="tile${cls}">${renderPanel(p, 56)}</div>`;
   openModal(`
-    <h3>Welcome to Next Up</h3>
-    <p class="howto-note"><b>Every day, five pattern puzzles — the same five for everyone.</b>
-      Each one hides a rule. Spot it, then <b>build</b> what comes next.</p>
+    <h3>How to play</h3>
+    <p class="howto-lead">Every puzzle is a pattern. Work out <b>what comes next</b>.</p>
     <div class="howto-example">
-      ${example.map(p => `<div class="tile">${renderPanel(p, 56)}</div>`).join('')}
-      <div class="tile question" style="width:56px;height:56px;font-size:22px;">?</div>
+      ${example.map(p => tile(p)).join('')}
+      <div class="tile question howto-q">?</div>
     </div>
-    <p class="howto-note">Here the fill alternates — so you'd build a <b>solid circle</b> with the controls under the puzzle.</p>
-    <p class="howto-note"><b>You get 3 tries per puzzle.</b> You compete on puzzles solved,
-      then fewest total attempts, then time. A wrong try keeps your work so you can adjust.</p>
-    <div class="howto-example">
-      <div class="tile">${renderPanel(nestedMini, 56)}</div>
-      <span class="howto-gallery-note">Some puzzles, like this one, you fill in by tapping sections.
-      Number and calendar puzzles explain themselves with a hint line up top.</span>
+    <div class="howto-answer">
+      <span>Black, white, black, white… so next is</span>${tile(dot('solid'), ' correct')}
     </div>
-    <p class="howto-note">Finish daily challenges to build a 🔥 streak, then share your result and
-      compare with friends on the leaderboard.</p>
+    <ol class="howto-steps">
+      <li><b>Spot the rule</b> in the numbered boxes.</li>
+      <li><b>Fill in the “?”</b> — tap an answer, or build it right in the box.</li>
+      <li><b>3 tries</b> per puzzle. <b>5 puzzles</b> a day, the same for everyone.</li>
+    </ol>
     <div class="modal-actions">
-      <button class="primary" id="modal-howto-play">${fromBoot ? "Start today's puzzles" : 'Got it'}</button>
+      <button class="primary" id="modal-howto-try">Try a warm-up puzzle</button>
+      <button id="modal-howto-close">Got it</button>
     </div>`);
-  document.getElementById('modal-howto-play').addEventListener('click', () => {
-    closeModal();
-    if (fromBoot) startDaily();
-  });
+  document.getElementById('modal-howto-try').addEventListener('click', () => { closeModal(); startTrial(); });
+  document.getElementById('modal-howto-close').addEventListener('click', closeModal);
 }
 
 /* ---------- Menu ---------- */
@@ -755,15 +808,19 @@ function goDaily() {
   showDailyIntro();
 }
 
-document.getElementById('btn-start-daily').addEventListener('click', () => { primeAudio(); startDaily(); });
+document.getElementById('btn-start-daily').addEventListener('click', () => {
+  primeAudio();
+  if (needsTrial()) startTrial(); else startDaily(); // new players get one warm-up first
+});
+document.getElementById('btn-intro-leaderboard').addEventListener('click', openLeaderboard);
 document.getElementById('btn-intro-menu').addEventListener('click', () => { renderMenu(); showScreen('menu'); });
-document.getElementById('btn-intro-howto').addEventListener('click', () => howToPlay(false));
+document.getElementById('btn-intro-howto').addEventListener('click', howToPlay);
 document.getElementById('btn-daily').addEventListener('click', goDaily);
 document.getElementById('btn-practice').addEventListener('click', startPractice);
 document.getElementById('btn-stats').addEventListener('click', openStats);
 document.getElementById('btn-history').addEventListener('click', openHistory);
 document.getElementById('btn-leaderboard').addEventListener('click', openLeaderboard);
-document.getElementById('btn-howto').addEventListener('click', () => howToPlay(false));
+document.getElementById('btn-howto').addEventListener('click', howToPlay);
 
 document.querySelectorAll('#diff-row button').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -776,6 +833,7 @@ document.getElementById('btn-quit').addEventListener('click', () => {
   if (game && game.timerId) clearInterval(game.timerId);
   game = null;
   setStreakHeat(0);
+  hideLevels();
   renderMenu();
   showScreen('menu');
 });
@@ -824,4 +882,6 @@ initAuth({
   // in; finished → the normal menu.
   if (!getDailyResult(todayKey())) showDailyIntro();
   else showScreen('menu');
+  // Brand-new players get the instructions as a popup, once.
+  if (isNewPlayer() && !getFlag('howto-seen')) howToPlay();
 });

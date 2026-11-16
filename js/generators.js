@@ -443,14 +443,14 @@ function genGridPlace(R, level) {
     const star = R.int(N * N);
     const free = ALL.filter(p => p !== star);
     const candidates = [
-      { text: 'One dot in every row', test: s => [0, 1, 2, 3].every(r => s.filter(p => row(p) === r).length === 1) },
-      { text: 'One dot in every column', test: s => [0, 1, 2, 3].every(c => s.filter(p => col(p) === c).length === 1) },
-      { text: 'Dots never touch each other (not even corners)', test: s => s.every(a => s.every(b => !touching(a, b))) },
-      { text: 'No dot touches the ★ (not even corners)', test: s => s.every(p => !touching(p, star)) },
-      { text: 'No dots in the corners', test: s => s.every(p => !CORNERS.includes(p)) },
-      { text: 'No dots in the middle 4 squares', test: s => s.every(p => !MIDDLE.includes(p)) },
-      { text: "No dot in the ★'s row", test: s => s.every(p => row(p) !== row(star)) },
-      { text: "No dot in the ★'s column", test: s => s.every(p => col(p) !== col(star)) },
+      { text: 'One dot in each row (across)', test: s => [0, 1, 2, 3].every(r => s.filter(p => row(p) === r).length === 1) },
+      { text: 'One dot in each column (up and down)', test: s => [0, 1, 2, 3].every(c => s.filter(p => col(p) === c).length === 1) },
+      { text: 'Dots can’t touch — not even corner to corner', test: s => s.every(a => s.every(b => !touching(a, b))) },
+      { text: 'No dot next to the ★ — not even corner to corner', test: s => s.every(p => !touching(p, star)) },
+      { text: 'No dots in the 4 corner squares', test: s => s.every(p => !CORNERS.includes(p)) },
+      { text: 'No dots in the 4 middle squares', test: s => s.every(p => !MIDDLE.includes(p)) },
+      { text: 'No dot in the ★’s row (across)', test: s => s.every(p => row(p) !== row(star)) },
+      { text: 'No dot in the ★’s column (up and down)', test: s => s.every(p => col(p) !== col(star)) },
     ];
     // "Dots never touch" is always rule ①; two more are drawn at random and
     // the solver keeps only combinations with exactly one answer.
@@ -475,7 +475,8 @@ function genGridPlace(R, level) {
       frames: [],
       next: answer,
       rule: 'Only one way to place the four dots follows every rule.',
-      instruction: `Place 4 dots: ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
+      // The ★'s square can't hold a dot — say so, since uniqueness often hinges on it.
+      instruction: `Place 4 dots (not on the ★): ① ${reqs[0].text} ② ${reqs[1].text} ③ ${reqs[2].text}`,
       answerSpec: { kind: 'dots', dotToken: dotTok, grid3: true, cols: N, cellPositions: free, fixed },
     };
   }

@@ -4,7 +4,7 @@
 import './migrate.js'; // must stay first: renames saved data before anything reads it
 import { makeRng, rngHelpers } from './rng.js';
 import { renderPanel, panelEq } from './panels.js';
-import { generateProblem, generateNestedFinale, generateTrial } from './generators.js?v=56';
+import { generateProblem, generateNestedFinale, generateTrial } from './generators.js?v=57';
 import { renderBuilder } from './builder.js?v=55';
 import { shake, playSound, setStreakHeat, primeAudio, isMuted, setMuted, reducedMotion } from './feel.js';
 import { showLevels, stepLevel, levelSlip, hideLevels, levelFromResults, setScenes } from './levels.js?v=33';

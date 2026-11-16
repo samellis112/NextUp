@@ -333,11 +333,15 @@ function dedupBestPerUser(rows) {
   return rows.filter((r, i) => { const k = playerKey(r, i); return !seen.has(k) && seen.add(k); }).slice(0, 50);
 }
 
+/* Total time for the 5 daily puzzles, to the hundredth: "32.24s", or
+   "01:05.42" from a minute on — the same format as the in-game clock. */
 function fmtTotalTime(avgMs) {
-  const total = Math.round((avgMs * 5) / 1000); // 5 daily puzzles
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return m ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
+  const cs = Math.round((avgMs * 5) / 10); // centiseconds
+  const totalSec = Math.floor(cs / 100);
+  const frac = String(cs % 100).padStart(2, '0');
+  if (totalSec < 60) return `${totalSec}.${frac}s`;
+  const m = Math.floor(totalSec / 60), sec = totalSec % 60;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${frac}`;
 }
 
 /* "1 1 2 ✕ 1" — the try each puzzle was solved on. Older rows that predate

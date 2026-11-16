@@ -22,7 +22,7 @@ import {
   showInviteLanding, openLeaderboard, postScore,
   signInWithGoogle, googleButtonHtml, requireAccount, postFeedback,
   postGuestScore, renderTodayBoard,
-} from './social.js';
+} from './social.js?v=58';
 
 const PRACTICE_LENGTH = 5;
 const DAILY_PROGRESS_KEY = 'nextup-daily-progress-v1';
@@ -668,7 +668,6 @@ function showDailyResults(entry) {
   const streaks = computeStreaks(todayKey());
   const attempts = attemptsOf(entry);
   const perfect = entry.score === entry.total && attempts === entry.total;
-  const secs = Math.round(entry.timeMs / 1000);
   const container = document.getElementById('results-body');
   // Score on the left, today's leaderboard on the right (stacked on phones,
   // where the board sits just below Share).
@@ -682,7 +681,7 @@ function showDailyResults(entry) {
 
         <div class="results-grid">
           <div class="result-stat"><div class="val">${attempts}</div><div class="lbl">Attempts</div></div>
-          <div class="result-stat"><div class="val">${secs}s</div><div class="lbl">Time</div></div>
+          <div class="result-stat"><div class="val">${formatClock(entry.timeMs)}</div><div class="lbl">Time</div></div>
           <div class="result-stat"><div class="val">🔥 ${streaks.current}</div><div class="lbl">Streak</div></div>
         </div>
 

@@ -1874,3 +1874,90 @@ body.sky-scene #screen-round #timer.round-timer { color: #0e2a52; text-shadow: 0
 .menu .menu-actions button { font-size: 18px; padding: 16px 24px; }
 .menu .streak-chip { font-size: 16px; }
 .daily-intro .intro-note { font-size: 16px; }
+
+/* ============================================================
+   Puzzles fill the screen
+   ============================================================
+   Every puzzle piece is sized from the viewport (the smaller of a width share
+   and a height share), so the puzzle grows to use a big monitor and shrinks to
+   fit a phone, and the whole thing stays on one screen where it can. */
+.container:has(#screen-round.active) { max-width: 1500px; }
+
+/* figures always scale with their box */
+#screen-round .frame-tile svg, #screen-round .matrix .tile svg, #screen-round .combine-cell svg,
+#screen-round .tile.answer-big svg, #screen-round .matrix #answer-slot svg { width: 100%; height: 100%; }
+
+/* --- 1 2 3 4 → 5 sequence puzzles --- */
+#screen-round .frame-stack { gap: clamp(6px, 1.6vw, 22px); }
+#screen-round .sequence .tile.frame-tile {
+  width: min(21vw, 19vh, 260px);
+  height: min(21vw, 19vh, 260px);
+}
+#screen-round .panel .tile.answer-big {
+  width: min(74vw, 34vh, 520px);
+  height: min(74vw, 34vh, 520px);
+}
+#screen-round .answer-slot .slot-ph, #screen-round .tile.question .slot-ph { font-size: clamp(40px, 9vh, 96px); }
+#screen-round .choices { gap: clamp(6px, 1.2vw, 16px); }
+#screen-round .choice-opt {
+  width: min(17vw, 19vh, 240px);
+  height: min(17vw, 19vh, 240px);
+}
+/* number + word puzzles share the height with a keypad, so a smaller answer box */
+#screen-round .panel[data-family="number"] .tile.answer-big,
+#screen-round .panel[data-family="word"] .tile.answer-big {
+  width: min(56vw, 17vh, 240px);
+  height: min(56vw, 17vh, 240px);
+}
+#screen-round .slot-number { font-size: clamp(36px, 8vh, 84px); }
+
+/* keypad */
+#screen-round .bld-numpad { grid-template-columns: repeat(3, min(22vw, 5.8vh, 90px)); gap: clamp(5px, 0.8vh, 12px); }
+#screen-round .bld-key { min-height: min(22vw, 5.8vh, 90px); font-size: clamp(18px, 3.2vh, 32px); }
+
+/* --- 3×3 matrix puzzles --- */
+#screen-round .matrix { gap: clamp(6px, 1.2vh, 14px); margin-bottom: clamp(12px, 2vh, 28px); }
+#screen-round .matrix .tile {
+  width: min(27vw, 17vh, 230px);
+  height: min(27vw, 17vh, 230px);
+}
+
+/* a matrix you fill in yourself has no answer choices under it, so it can be bigger */
+#screen-round .panel:not(:has(.choices)) .matrix .tile {
+  width: min(27vw, 21vh, 280px);
+  height: min(27vw, 21vh, 280px);
+}
+
+/* --- A + B = ? rows --- */
+#screen-round .combine-cell { width: min(24vw, 19vh, 230px); height: min(24vw, 19vh, 230px); }
+#screen-round .combine-op { font-size: clamp(18px, 4vh, 40px); width: auto; padding: 0 2px; }
+
+/* --- numbers-add-up grid --- */
+#screen-round .sumgrid {
+  --c: min(19vw, 7.6vh, 120px);
+  grid-template-columns: repeat(3, var(--c)) calc(var(--c) * 0.85);
+  grid-auto-rows: var(--c);
+  gap: clamp(5px, 1vh, 10px);
+}
+#screen-round .sum-cell, #screen-round .sum-blank .slot-number, #screen-round .sum-blank .slot-ph { font-size: calc(var(--c) * 0.42); }
+#screen-round .sum-tot { font-size: calc(var(--c) * 0.32); }
+
+/* --- calendar, week and bar puzzles --- */
+#screen-round .month-slot { max-width: min(94vw, 78vh, 760px); }
+#screen-round .m-day { min-height: clamp(40px, 7.4vh, 84px); font-size: clamp(13px, 2.4vh, 22px); border-radius: 8px; }
+#screen-round .m-day .m-sym { font-size: clamp(11px, 2vh, 18px); }
+#screen-round .m-head { font-size: clamp(11px, 1.8vh, 16px); }
+#screen-round .week-row { width: min(94vw, 760px); }
+#screen-round .week-row svg { width: 100%; }
+#screen-round .slot-day { min-height: clamp(52px, 9vh, 92px); font-size: clamp(11px, 2vh, 18px); }
+#screen-round .bars-slot { max-width: min(94vw, 640px); }
+#screen-round .bar-track { width: clamp(56px, 12vw, 120px); height: min(40vh, 420px); }
+#screen-round .bar-val { font-size: clamp(15px, 3vh, 28px); }
+#screen-round .bar-label { font-size: clamp(12px, 2vh, 18px); }
+
+/* submit + reveal keep pace */
+#screen-round .bld-submit { font-size: clamp(15px, 2.4vh, 22px); padding: clamp(10px, 1.6vh, 18px) clamp(22px, 4vw, 44px); border-radius: 12px; }
+#screen-round .reveal .tile { width: min(40vw, 22vh, 240px); height: min(40vw, 22vh, 240px); }
+#screen-round .reveal .tile svg { width: 100%; height: 100%; }
+#screen-round .reveal .tile.week-tile { width: auto; height: auto; }
+#screen-round .reveal .tile.week-tile svg { width: auto; height: auto; max-width: 100%; }

@@ -24,11 +24,11 @@ const SKY_LIGHT = [
 ];
 const STEP_PX = 320; // how far the nearest specks travel per level
 
-/* Scenes for the last three puzzles of a 5-puzzle round — a climb through
-   the clouds. They override the level colours:
-     below   puzzle 3: clouds gather along the top, you're coming up under them
-     clouds  puzzle 4: you're inside them, clouds all around
-     sun     puzzle 5: above them — bright blue, light from the corner, cloud below
+/* Scenes for the upper levels of a 5-puzzle round — a climb through the
+   clouds. They override the level colours:
+     below   level 2: clouds gather along the top, you're coming up under them
+     clouds  level 3: you're inside them, clouds all around
+     sun     level 4+: above them — bright blue, light from the corner, cloud below
    The same eight clouds slide down the screen from one scene to the next. */
 const SCENES = {
   below: ['#3d74bd', '#16305f'],
@@ -56,8 +56,18 @@ function ensure() {
   return root;
 }
 
+/* The scene follows your LEVEL (solves minus misses), not the puzzle number:
+   two solves up you reach the underside of the clouds, three you're inside
+   them, four you break out above. A missed puzzle drops you a level, so anyone
+   who misses even one never reaches the bright sky. */
+const SCENE_AT_LEVEL = [null, null, 'below', 'clouds', 'sun', 'sun'];
+let scenesOn = false;
+
 function paint() {
   const el = ensure();
+  scene = scenesOn ? SCENE_AT_LEVEL[level] : null;
+  for (const name of Object.keys(SCENES)) el.classList.toggle('scene-' + name, scene === name);
+  document.body.classList.toggle('sky-scene', !!scene); // keeps directions readable on the bright sky
   const light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
   const [top, bot] = scene ? SCENES[scene] : (light ? SKY_LIGHT : SKY_DARK)[level];
   el.style.setProperty('--sky-top', top);
@@ -120,12 +130,9 @@ export function levelSlip() {
   paint();
 }
 
-/* 'below', 'clouds', 'sun', or null for the plain level sky. */
-export function setScene(name) {
-  scene = SCENES[name] ? name : null;
-  const el = ensure();
-  for (const name of Object.keys(SCENES)) el.classList.toggle('scene-' + name, scene === name);
-  document.body.classList.toggle('sky-scene', !!scene); // keeps directions readable on the bright sky
+/* Scenes are used on full 5-puzzle rounds only. */
+export function setScenes(on) {
+  scenesOn = !!on;
   paint();
 }
 
@@ -133,6 +140,7 @@ export function hideLevels() {
   if (root) root.classList.remove('on', ...Object.keys(SCENES).map(n => 'scene-' + n));
   document.body.classList.remove('sky-scene');
   scene = null;
+  scenesOn = false;
   level = 0;
   travel = 0;
 }

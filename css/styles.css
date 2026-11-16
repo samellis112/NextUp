@@ -2294,3 +2294,9 @@ body[data-screen="round"] #screen-round.active {
 .howto-practice { margin-bottom: clamp(10px, 2.2vh, 20px); }
 .howto-box .howto-steps { font-size: clamp(14px, 2.1vh, 16px); line-height: 1.45; margin-bottom: clamp(10px, 2.4vh, 22px); }
 .howto-box .modal-actions button { min-height: clamp(44px, 6vh, 54px); }
+
+/* Streak pill: only as wide as its text (the flex-column screen would
+   otherwise stretch it), and truly gone when there's no streak. */
+.streak-chip { align-self: center; width: fit-content; }
+.menu .streak-chip { padding: 4px 14px; margin-bottom: clamp(6px, 1.2vh, 18px); }
+.streak-chip[hidden] { display: none; }

@@ -130,7 +130,7 @@ const isNewPlayer = () => Object.keys(loadDaily().results).length === 0 && !load
 function startDemo() {
   closeModal();
   const R = rngHelpers(makeRng(null));
-  const q = generateProblem(R, R.pick(['easy', 'medium']));
+  const q = generateProblem(R, R.pick(['medium', 'hard'])); // never easy: the try link should show off a real puzzle
   if (!q.instruction) q.instruction = 'What comes next?';
   game = {
     mode: 'demo',

@@ -243,6 +243,7 @@ function loadQuestion() {
   ui.msg.className = 'msg';
   ui.rule.hidden = true;
   ui.next.hidden = true;
+  ui.builder.style.minHeight = '';
 
   const fam = q.family || (q.type === 'matrix' ? 'matrix' : 'shapes');
   ui.panel.dataset.family = fam; // drives per-family styling
@@ -441,6 +442,8 @@ function handleSubmit(built) {
   // Freeze the slot green/red; show the correct answer when they missed it.
   const slot = document.getElementById('answer-slot');
   if (slot) slot.classList.add('resolved', correct ? 'correct' : 'wrong');
+  // Hold the tray's height so the centered puzzle doesn't hop when Submit goes away.
+  ui.builder.style.minHeight = ui.builder.offsetHeight + 'px';
   // Calendar, week and bar puzzles mark the right answer on the puzzle itself
   // (no second full-size copy below, which would push Next off the screen).
   if (!correct && slot && markAnswerInSlot(slot, q.next)) {

@@ -1163,6 +1163,7 @@ button.quit:hover { color: var(--text); border-color: var(--accent); }
 .leaderboard h2 { font-size: 24px; margin: 0 0 8px 0; }
 #leaderboard-content { margin: 20px 0; }
 .lb-tabs { display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
+.lb-tabs[hidden], #leaderboard-subtitle:empty { display: none; }
 .lb-tab {
   flex: 1 1 auto;
   min-width: 64px;

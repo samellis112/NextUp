@@ -227,7 +227,7 @@ export async function backfillScores() {
 
 const LEADERBOARD_TABS = [
   { key: 'daily', label: 'Daily' },
-  { key: 'groups', label: 'My Groups' },
+  { key: 'groups', label: 'My Groups', hidden: true }, // hidden from the UI for now; code kept intact
 ];
 
 let activeLeaderboardTab = 'daily';
@@ -244,7 +244,10 @@ export async function openLeaderboard(tab) {
 function renderLeaderboardTabs() {
   const tabs = document.getElementById('leaderboard-tabs');
   if (!tabs) return;
-  tabs.innerHTML = LEADERBOARD_TABS.map(t => `
+  const visible = LEADERBOARD_TABS.filter(t => !t.hidden || t.key === activeLeaderboardTab);
+  // A single tab isn't worth showing as a tab bar.
+  tabs.hidden = visible.length < 2;
+  tabs.innerHTML = visible.map(t => `
     <button class="lb-tab${t.key === activeLeaderboardTab ? ' active' : ''}" role="tab"
       aria-selected="${t.key === activeLeaderboardTab}" data-tab="${esc(t.key)}">${esc(t.label)}</button>`).join('');
   tabs.querySelectorAll('.lb-tab').forEach(btn => {
@@ -298,7 +301,7 @@ async function loadLeaderboardTab(key) {
     return;
   }
 
-  if (subtitle) subtitle.textContent = "Today's daily — fewest tries first, then fastest time.";
+  if (subtitle) subtitle.textContent = '';
   container.innerHTML = `<div class="history-empty">Loading…</div>`;
   const { data, error } = await dailyBoardQuery();
   if (activeLeaderboardTab !== key) return; // user switched tabs mid-load

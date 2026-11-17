@@ -2408,3 +2408,14 @@ body[data-screen="menu"], body[data-screen="daily-intro"] { --mark-blue: #0a3f8f
 /* Main menu: Practice Round / Try One Puzzle back to full width (the column
    layout from the fit-to-viewport change had shrunk them to their text). */
 .menu .menu-actions { width: 100%; }
+
+/* Readable on the dark lower half of the sky: practice label + text links */
+body[data-screen="menu"] .menu .menu-divider,
+body[data-screen="daily-intro"] .menu .menu-divider,
+body[data-screen="menu"] .menu .menu-links,
+body[data-screen="daily-intro"] .menu .menu-links,
+body[data-screen="menu"] .menu .menu-link,
+body[data-screen="daily-intro"] .menu .menu-link,
+body[data-screen="daily-intro"] .intro-note { color: #dbe7f7; }
+body[data-screen="menu"] .menu .menu-link:hover,
+body[data-screen="daily-intro"] .menu .menu-link:hover { color: #fff; }
